@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>巨幕拼图工坊 | 全屏自适应 · 智能分割</title>
+    <link rel="manifest" href="./manifest.json">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(145deg, #1a2a3a 0%, #0f1a24 100%);
+            font-family: 'Segoe UI', 'Poppins', 'Roboto', system-ui, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 主容器 - 充分利用宽屏 */
+        .game-container {
+            width: 100%;
+            max-width: 1600px;
+            background: rgba(20, 30, 38, 0.8);
+            backdrop-filter: blur(4px);
+            border-radius: 56px;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1);
+            padding: 20px 24px 28px;
+            transition: all 0.2s;
+        }
+
+        /* 工具栏 */
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            background: rgba(0, 0, 0, 0.45);
+            padding: 12px 20px;
+            border-radius: 80px;
+            backdrop-filter: blur(4px);
+            align-items: center;
+        }
+
+        .btn {
+            background: #ffd966;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 48px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: 0.1s linear;
+            box-shadow: 0 4px 0 #aa6f20;
+            color: #3b2a1f;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #aa6f20; }
+        .btn-primary { background: #4c9aff; color: white; box-shadow: 0 4px 0 #1f4870; }
+        .btn-warning { background: #f5a97f; color: #3c2a1f; box-shadow: 0 4px 0 #b45f2b; }
+        .btn-success { background: #6fcf97; box-shadow: 0 4px 0 #2c6e49; color: #1f3b2c; }
+        .btn-dark { background: #5d6e7e; box-shadow: 0 4px 0 #2c3e44; color: white; }
+
+        select, input[type="file"], input[type="number"] {
+            background: #ecf0f1;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 48px;
+            font-weight: bold;
+            font-family: monospace;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        input[type="number"] {
+            width: 80px;
+            text-align: center;
+        }
+
+        /* 主内容区: 拼图区域占据绝大部分空间，侧边栏固定宽度 */
+        .info-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            align-items: stretch;
+        }
+
+        /* 拼图区域 - 弹性放大，自适应宽度 */
+        .puzzle-area {
+            flex: 4;
+            min-width: 280px;
+            background: #1e2a2f;
+            border-radius: 48px;
+            padding: 20px;
+            box-shadow: inset 0 0 0 1px #ffffff20, 0 12px 24px black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas#puzzleCanvas {
+            display: block;
+            background: #2a2e33;
+            border-radius: 28px;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.5);
+            cursor: pointer;
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+        }
+
+        /* 侧边栏 */
+        .side-panel {
+            flex: 1.2;
+            min-width: 240px;
+            background: rgba(0, 0, 0, 0.55);
+            border-radius: 44px;
+            padding: 20px;
+            backdrop-filter: blur(8px);
+            color: #f0ede8;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .preview-section {
+            text-align: center;
+            border-bottom: 1px dashed #ffd966;
+            padding-bottom: 16px;
+        }
+
+        .preview-img {
+            margin-top: 12px;
+        }
+        .preview-img img {
+            max-width: 100%;
+            max-height: 150px;
+            border-radius: 24px;
+            box-shadow: 0 5px 12px black;
+            object-fit: contain;
+            background: #1e1a14;
+        }
+        .hidden-preview { display: none; }
+
+        .hint-box {
+            background: #00000066;
+            border-radius: 28px;
+            padding: 12px;
+            font-size: 0.85rem;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .sound-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 18px;
+            align-items: center;
+            background: rgba(0,0,0,0.3);
+            border-radius: 48px;
+            padding: 8px;
+        }
+
+        /* 庆祝动画 */
+        .celebration {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, #ffec99, #ffbb77);
+            padding: 24px 48px;
+            border-radius: 100px;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #b64926;
+            z-index: 1000;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            box-shadow: 0 0 60px gold;
+            animation: bouncePop 0.6s cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        @keyframes bouncePop {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3);}
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1);}
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); visibility: hidden;}
+        }
+
+        footer {
+            font-size: 0.75rem;
+            text-align: center;
+            margin-top: 24px;
+            color: #bbaacc;
+        }
+
+        @media (max-width: 850px) {
+            .game-container { padding: 16px; }
+            .toolbar { border-radius: 48px; gap: 10px; }
+            .btn, select, input { padding: 6px 14px; font-size: 0.8rem; }
+            .celebration { font-size: 1.2rem; padding: 12px 24px; white-space: nowrap; }
+            .side-panel { min-width: 200px; }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div class="toolbar">
+        <input type="file" id="uploadImage" accept="image/jpeg,image/png,image/webp">
+        <div style="display: flex; gap: 8px; background: #2c3e2e80; padding: 5px 16px; border-radius: 48px; align-items:center;">
+            <span style="color:white; font-weight:500;">分割数</span>
+            <input type="number" id="gridNumInput" min="2" max="6" value="3" step="1">
+            <span style="color:white;">x</span>
+            <span id="gridNumDisplay" style="color:#ffd966; font-weight:bold;">3</span>
+        </div>
+        <button class="btn btn-primary" id="generateBtn">🎲 生成 & 打乱</button>
+        <button class="btn" id="hintBtn">💡 提示</button>
+        <button class="btn btn-warning" id="resetBtn">🔄 一键还原</button>
+        <button class="btn btn-success" id="saveBtn">📸 保存拼图快照</button>
+    </div>
+
+    <div class="info-area">
+        <div class="puzzle-area">
+            <canvas id="puzzleCanvas"></canvas>
+        </div>
+        <div class="side-panel">
+            <div class="preview-section">
+                <button id="togglePreviewBtn" class="btn btn-dark" style="padding: 6px 14px;">🖼️ 显示/隐藏原图</button>
+                <div id="previewContainer" class="preview-img hidden-preview">
+                    <div style="margin:10px 0 5px;">📷 原始参考</div>
+                    <img id="previewImg" alt="预览图" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%233a4c5c'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23ffd966' font-size='14'%3E上传图片%3C/text%3E%3C/svg%3E">
+                </div>
+                <button id="saveOriginalBtn" class="btn" style="margin-top:12px; background:#a2b9c6;">💾 保存原始图片</button>
+            </div>
+            <div class="hint-box">
+                🎯 <strong>经典拼图玩法</strong><br>
+                点击拼图块 → 再点击另一块 → 交换位置！<br>
+                完整还原图像即可获胜 ✨
+            </div>
+            <div class="sound-toggle">
+                <span>🔊 音效</span>
+                <label style="cursor:pointer;"><input type="checkbox" id="soundCheckbox" checked> 开/关</label>
+            </div>
+            <div style="font-size:12px; text-align:center; background:#00000044; border-radius:32px; padding:6px;">
+                ⚡ 超大自适应画布 | 任意图片比例完美适配
+            </div>
+        </div>
+    </div>
+    <footer>✨ 巨幕拼图体验 · 全屏自适应 · 智能辅助系统 ✨</footer>
+</div>
+
+<script>
+    (function(){
+        // ---------- DOM 元素 ----------
+        const fileInput = document.getElementById('uploadImage');
+        const gridNumInput = document.getElementById('gridNumInput');
+        const gridNumDisplay = document.getElementById('gridNumDisplay');
+        const generateBtn = document.getElementById('generateBtn');
+        const hintBtn = document.getElementById('hintBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const saveOriginalBtn = document.getElementById('saveOriginalBtn');
+        const togglePreviewBtn = document.getElementById('togglePreviewBtn');
+        const previewContainer = document.getElementById('previewContainer');
+        const previewImg = document.getElementById('previewImg');
+        const puzzleCanvas = document.getElementById('puzzleCanvas');
+        const soundCheckbox = document.getElementById('soundCheckbox');
+        const ctx = puzzleCanvas.getContext('2d');
+        
+        // ---------- 游戏状态 ----------
+        let originalImage = null;          // 原始图片对象
+        let rows = 3, cols = 3;             // 当前分割数量（正方形网格）
+        let tileOrder = [];                 // 拼图顺序：每个位置存放原始碎片索引
+        let correctOrder = [];              // 正确顺序 [0,1,2,...]
+        let selectedTileIndex = null;       // 当前选中的拼图块索引
+        let gameCompleted = false;
+        
+        // 存储每个碎片的源矩形 (基于原图实际像素，保持原尺寸)
+        let tileSrcRects = [];
+        // 存储每个碎片的离屏图像 (矩形，用于快速渲染)
+        let tileImages = [];
+        let canvasDisplaySize = { width: 0, height: 0 };
+        
+        // 音效系统
+        let audioCtx = null;
+        let soundEnabled = true;
+        
+        function initAudio() {
+            if (audioCtx) return;
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            } catch(e) { console.warn("不支持音频"); }
+        }
+        
+        function playSound(type) {
+            if (!soundEnabled) return;
+            if (!audioCtx) initAudio();
+            if (!audioCtx) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            let freq = 720, dur = 0.12;
+            if (type === 'swap') { freq = 640; dur = 0.1; }
+            else if (type === 'complete') { freq = 1046; dur = 0.45;
+                const osc2 = audioCtx.createOscillator();
+                const gain2 = audioCtx.createGain();
+                osc2.connect(gain2);
+                gain2.connect(audioCtx.destination);
+                osc2.frequency.value = 1318.52;
+                gain2.gain.setValueAtTime(0.2, now);
+                gain2.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+                osc2.start();
+                osc2.stop(now + dur);
+            } else if (type === 'hint') { freq = 880; dur = 0.18; }
+            else if (type === 'reset') { freq = 523.25; dur = 0.2; }
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+            osc.start();
+            osc.stop(now + dur);
+        }
+        
+        function showCelebration() {
+            if (gameCompleted) return;
+            gameCompleted = true;
+            playSound('complete');
+            const div = document.createElement('div');
+            div.className = 'celebration';
+            div.innerHTML = '🎉 完美复原 · 拼图大师 🎉 🧩✨';
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 1600);
+            puzzleCanvas.style.filter = 'drop-shadow(0 0 8px gold)';
+            setTimeout(() => puzzleCanvas.style.filter = '', 600);
+        }
+        
+        function resetCompletionFlag() { gameCompleted = false; }
+        
+        function checkVictory() {
+            if (gameCompleted) return true;
+            let win = true;
+            for (let i = 0; i < tileOrder.length; i++) {
+                if (tileOrder[i] !== correctOrder[i]) { win = false; break; }
+            }
+            if (win && tileOrder.length) { showCelebration(); return true; }
+            return false;
+        }
+        
+        function swapTiles(idxA, idxB) {
+            if (idxA === idxB) return;
+            [tileOrder[idxA], tileOrder[idxB]] = [tileOrder[idxB], tileOrder[idxA]];
+            renderPuzzle();
+            playSound('swap');
+            checkVictory();
+        }
+        
+        // ---------- 核心：计算画布尺寸，使其在 puzzle-area 内尽可能大，且保持图片比例 ----------
+        function computeOptimalCanvasSize() {
+            if (!originalImage) return { width: 500, height: 500 };
+            const container = document.querySelector('.puzzle-area');
+            const containerRect = container.getBoundingClientRect();
+            // 可用宽度（减去内边距）
+            let maxWidth = containerRect.width - 40;
+            let maxHeight = window.innerHeight * 0.7;  // 不超过视口70%
+            const imgAspect = originalImage.height / originalImage.width;
+            let targetWidth = maxWidth;
+            let targetHeight = targetWidth * imgAspect;
+            if (targetHeight > maxHeight) {
+                targetHeight = maxHeight;
+                targetWidth = targetHeight / imgAspect;
+            }
+            // 保证最小尺寸
+            targetWidth = Math.max(280, targetWidth);
+            targetHeight = Math.max(200, targetHeight);
+            return { width: targetWidth, height: targetHeight };
+        }
+        
+        // 构建所有碎片的离屏图像（根据当前显示尺寸）
+        function buildTileImages() {
+            if (!originalImage) return;
+            const total = rows * cols;
+            const tileW = canvasDisplaySize.width / cols;
+            const tileH = canvasDisplaySize.height / rows;
+            tileImages = [];
+            for (let idx = 0; idx < total; idx++) {
+                const srcRect = tileSrcRects[idx];
+                const offCanvas = document.createElement('canvas');
+                offCanvas.width = tileW;
+                offCanvas.height = tileH;
+                const offCtx = offCanvas.getContext('2d');
+                offCtx.drawImage(originalImage, srcRect.sx, srcRect.sy, srcRect.sw, srcRect.sh, 0, 0, tileW, tileH);
+                tileImages.push(offCanvas);
+            }
+        }
+        
+        // 渲染主画布 (直接拼接碎片)
+        function renderPuzzle() {
+            if (!originalImage || tileImages.length === 0) return;
+            const w = canvasDisplaySize.width;
+            const h = canvasDisplaySize.height;
+            puzzleCanvas.width = w;
+            puzzleCanvas.height = h;
+            ctx.clearRect(0, 0, w, h);
+            const tileW = w / cols;
+            const tileH = h / rows;
+            // 绘制所有拼图块
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    const posIdx = i * cols + j;
+                    const srcIdx = tileOrder[posIdx];
+                    if (srcIdx === undefined) continue;
+                    const tileImg = tileImages[srcIdx];
+                    if (!tileImg) continue;
+                    const dx = j * tileW;
+                    const dy = i * tileH;
+                    ctx.drawImage(tileImg, dx, dy, tileW, tileH);
+                    // 绘制网格线（经典分割线）
+                    ctx.beginPath();
+                    ctx.strokeStyle = "#e0bc7e";
+                    ctx.lineWidth = 1.8;
+                    ctx.strokeRect(dx, dy, tileW, tileH);
+                    
+                    // 高亮选中的拼图块
+                    if (selectedTileIndex === posIdx) {
+                        ctx.save();
+                        ctx.globalAlpha = 0.45;
+                        ctx.fillStyle = "#ffffb0";
+                        ctx.fillRect(dx, dy, tileW, tileH);
+                        ctx.restore();
+                        // 加粗边框
+                        ctx.beginPath();
+                        ctx.strokeStyle = "#ffcc55";
+                        ctx.lineWidth = 4;
+                        ctx.strokeRect(dx + 1, dy + 1, tileW - 2, tileH - 2);
+                    }
+                }
+            }
+        }
+        
+        // 重新构建整个拼图系统 (核心刷新)
+        function rebuildPuzzle(keepOrder = false) {
+            if (!originalImage) return false;
+            rows = parseInt(gridNumInput.value);
+            cols = rows;
+            gridNumDisplay.innerText = rows;
+            
+            // 1. 计算最优画布尺寸
+            const newSize = computeOptimalCanvasSize();
+            canvasDisplaySize = { width: newSize.width, height: newSize.height };
+            // 设置 canvas 元素的 CSS 宽高（自适应父容器）
+            puzzleCanvas.style.width = '100%';
+            puzzleCanvas.style.height = 'auto';
+            
+            const imgW = originalImage.width;
+            const imgH = originalImage.height;
+            
+            // 2. 计算每个碎片的源矩形 (基于原图实际像素)
+            tileSrcRects = [];
+            const pieceW = imgW / cols;
+            const pieceH = imgH / rows;
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    tileSrcRects.push({ sx: j * pieceW, sy: i * pieceH, sw: pieceW, sh: pieceH });
+                }
+            }
+            const total = rows * cols;
+            correctOrder = Array.from({length: total}, (_,k) => k);
+            if (!keepOrder || tileOrder.length !== total) {
+                tileOrder = [...correctOrder];
+                // 打乱，但不能完全一样
+                do { shuffleArray(tileOrder); } while (tileOrder.every((v,i)=> v === correctOrder[i]));
+            } else {
+                // 若顺序数组长度不一致，重置
+                if (tileOrder.length !== total) tileOrder = [...correctOrder];
+            }
+            selectedTileIndex = null;
+            resetCompletionFlag();
+            gameCompleted = false;
+            // 3. 构建碎片图像（依据新的画布尺寸）
+            buildTileImages();
+            renderPuzzle();
+            return true;
+        }
+        
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+        }
+        
+        // 一键还原
+        function oneKeyReset() {
+            if (!originalImage) return;
+            tileOrder = [...correctOrder];
+            selectedTileIndex = null;
+            renderPuzzle();
+            playSound('reset');
+            resetCompletionFlag();
+            gameCompleted = false;
+            const toast = document.createElement('div');
+            toast.innerText = '✨ 已还原至完整图像 ✨';
+            toast.style.cssText = 'position:fixed; bottom:30%; left:50%; transform:translateX(-50%); background:#1f2a2fe6; padding:10px 28px; border-radius:48px; color:#ffdd99; z-index:999; font-weight:bold; backdrop-filter:blur(6px); font-size:1rem;';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 1300);
+        }
+        
+        // 重新打乱
+        function reshufflePuzzle() {
+            if (!originalImage) { alert("请先上传图片"); return; }
+            rebuildPuzzle(false);
+            playSound('reset');
+        }
+        
+        // 提示功能：闪烁拼图区域 + 浮层提醒
+        function showHint() {
+            if (!originalImage) { alert("请上传图片后使用提示"); return; }
+            playSound('hint');
+            puzzleCanvas.style.boxShadow = '0 0 0 5px #ffdd88, 0 0 0 10px #ffaa55';
+            setTimeout(() => puzzleCanvas.style.boxShadow = '', 1500);
+            const hintDiv = document.createElement('div');
+            hintDiv.style.cssText = 'position:fixed; bottom:30px; right:30px; background:#000000aa; backdrop-filter:blur(16px); padding:10px 24px; border-radius:48px; color:#ffec9f; font-size:0.95rem; z-index:999; border:1px solid #ffcc77; font-weight:bold;';
+            hintDiv.innerHTML = '💡 提示：右侧可显示原图对比，或使用一键还原';
+            document.body.appendChild(hintDiv);
+            setTimeout(() => hintDiv.remove(), 3000);
+        }
+        
+        // 保存当前拼图快照
+        function saveSnapshot() {
+            if (!originalImage) { alert("无拼图内容"); return; }
+            const link = document.createElement('a');
+            link.download = 'puzzle_snapshot.png';
+            link.href = puzzleCanvas.toDataURL('image/png');
+            link.click();
+            playSound('swap');
+        }
+        
+        // 保存原始图片 (原尺寸)
+        function saveOriginalPicture() {
+            if (!originalImage) { alert("没有原始图片"); return; }
+            const canvas = document.createElement('canvas');
+            canvas.width = originalImage.width;
+            canvas.height = originalImage.height;
+            const tempCtx = canvas.getContext('2d');
+            tempCtx.drawImage(originalImage, 0, 0);
+            const link = document.createElement('a');
+            link.download = 'original_puzzle_image.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            playSound('hint');
+        }
+        
+        // 上传图片处理
+        function handleImageUpload(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    originalImage = img;
+                    previewImg.src = e.target.result;
+                    rebuildPuzzle(true);
+                    playSound('reset');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // canvas 点击交互
+        function onCanvasClick(e) {
+            if (!originalImage || tileOrder.length === 0) return;
+            const rect = puzzleCanvas.getBoundingClientRect();
+            // 实际 canvas 像素尺寸 (canvas.width/height) 与 CSS 尺寸的比例
+            const scaleX = canvasDisplaySize.width / rect.width;
+            const scaleY = canvasDisplaySize.height / rect.height;
+            let mouseX = (e.clientX - rect.left) * scaleX;
+            let mouseY = (e.clientY - rect.top) * scaleY;
+            if (mouseX < 0) mouseX = 0; if (mouseY < 0) mouseY = 0;
+            const tileW = canvasDisplaySize.width / cols;
+            const tileH = canvasDisplaySize.height / rows;
+            const colIdx = Math.floor(mouseX / tileW);
+            const rowIdx = Math.floor(mouseY / tileH);
+            if (rowIdx >= 0 && rowIdx < rows && colIdx >=0 && colIdx < cols) {
+                const clickedIdx = rowIdx * cols + colIdx;
+                if (selectedTileIndex === null) {
+                    selectedTileIndex = clickedIdx;
+                    renderPuzzle();
+                } else {
+                    if (selectedTileIndex !== clickedIdx) {
+                        swapTiles(selectedTileIndex, clickedIdx);
+                    }
+                    selectedTileIndex = null;
+                    renderPuzzle();
+                }
+            } else if (selectedTileIndex !== null) {
+                selectedTileIndex = null;
+                renderPuzzle();
+            }
+        }
+        
+        function togglePreview() {
+            previewContainer.classList.toggle('hidden-preview');
+        }
+        
+        // 监听分割数量手动变更
+        function onGridNumberChange() {
+            let val = parseInt(gridNumInput.value);
+            if (isNaN(val)) val = 3;
+            val = Math.min(6, Math.max(2, val));
+            gridNumInput.value = val;
+            if (originalImage) {
+                rebuildPuzzle(false);
+            }
+        }
+        
+        // 窗口大小改变时重新适配 (重要)
+        let resizeTimer;
+        function onWindowResize() {
+            if (resizeTimer) clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                if (originalImage) {
+                    rebuildPuzzle(true);  // 保持顺序，只改变尺寸
+                }
+            }, 150);
+        }
+        
+        function bindEvents() {
+            fileInput.addEventListener('change', (e) => { if(e.target.files && e.target.files[0]) handleImageUpload(e.target.files[0]); });
+            generateBtn.addEventListener('click', reshufflePuzzle);
+            hintBtn.addEventListener('click', showHint);
+            resetBtn.addEventListener('click', oneKeyReset);
+            saveBtn.addEventListener('click', saveSnapshot);
+            saveOriginalBtn.addEventListener('click', saveOriginalPicture);
+            togglePreviewBtn.addEventListener('click', togglePreview);
+            puzzleCanvas.addEventListener('click', onCanvasClick);
+            soundCheckbox.addEventListener('change', (e) => { soundEnabled = e.target.checked; if(soundEnabled && audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); });
+            gridNumInput.addEventListener('change', onGridNumberChange);
+            window.addEventListener('resize', onWindowResize);
+            document.body.addEventListener('click', () => {
+                if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            }, { once: true });
+        }
+        
+        // 默认演示图片 (优雅提示)
+        function setDefaultImage() {
+            const defaultImg = new Image();
+            defaultImg.crossOrigin = "Anonymous";
+            defaultImg.src = "https://placehold.co/1000x700/5e4a38/f7d66a?text=Upload+Your+Puzzle+Image";
+            defaultImg.onload = () => {
+                originalImage = defaultImg;
+                previewImg.src = defaultImg.src;
+                rebuildPuzzle(true);
+            };
+            defaultImg.onerror = () => {
+                // 如果网络图片加载失败，创建一个渐变色canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = 800;
+                canvas.height = 600;
+                const dCtx = canvas.getContext('2d');
+                const grad = dCtx.createLinearGradient(0,0,canvas.width,canvas.height);
+                grad.addColorStop(0, '#6c5a47');
+                grad.addColorStop(1, '#8b765c');
+                dCtx.fillStyle = grad;
+                dCtx.fillRect(0,0,canvas.width,canvas.height);
+                dCtx.fillStyle = "#ffd966";
+                dCtx.font = "bold 32px 'Segoe UI'";
+                dCtx.textAlign = "center";
+                dCtx.fillText("⬆️ 上传图片开始", canvas.width/2, canvas.height/2);
+                canvas.toBlob(blob => {
+                    const img = new Image();
+                    img.onload = () => { originalImage = img; previewImg.src = img.src; rebuildPuzzle(true); };
+                    img.src = URL.createObjectURL(blob);
+                });
+            };
+        }
+        setDefaultImage();
+        bindEvents();
+    })();
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sv.js').then(reg => {
+      console.log('Service Worker 注册成功，作用域:', reg.scope);
+    }).catch(err => {
+      console.error('Service Worker 注册失败:', err);
+    });
+  }
+</script>
+</body>
+</html>
