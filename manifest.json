@@ -1,11 +1,11 @@
 {
-  "name": "拼图-益智游戏、离线可玩",
+  "name": "巨幕拼图工坊 - 三模式益智拼图",
   "short_name": "Pintu",
-  "description": "拼图",
+  "description": "交换/滑动/旋转三种模式，计时评级，成就徽章，离线可玩",
   "start_url": "/pintu/",                
   "display": "standalone",
-  "background_color": "#f5f5f5",
-  "theme_color": "#4CAF50",
+  "background_color": "#0e1820",
+  "theme_color": "#16222e",
   "orientation": "portrait",
   "scope": "/pintu/",                     
   "icons": [

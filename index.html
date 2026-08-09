@@ -3,233 +3,301 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>巨幕拼图工坊 | 全屏自适应 · 智能分割</title>
+    <title>巨幕拼图工坊 | 三模式益智 · 智能辅助</title>
     <link rel="manifest" href="./manifest.json">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
 
         body {
-            background: linear-gradient(145deg, #1a2a3a 0%, #0f1a24 100%);
+            background: linear-gradient(145deg, #16222e 0%, #0e1820 100%);
             font-family: 'Segoe UI', 'Poppins', 'Roboto', system-ui, sans-serif;
             min-height: 100vh;
-            padding: 20px;
+            padding: 18px;
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        /* 主容器 - 充分利用宽屏 */
         .game-container {
             width: 100%;
             max-width: 1600px;
             background: rgba(20, 30, 38, 0.8);
             backdrop-filter: blur(4px);
-            border-radius: 56px;
+            border-radius: 44px;
             box-shadow: 0 25px 45px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1);
-            padding: 20px 24px 28px;
-            transition: all 0.2s;
+            padding: 18px 20px 24px;
         }
 
-        /* 工具栏 */
+        /* ---------- HUD 信息条 ---------- */
+        .hud-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 16px;
+            background: rgba(0, 0, 0, 0.45);
+            border-radius: 48px;
+            padding: 10px 18px;
+            border: 1px solid #ffffff10;
+        }
+        .hud-stat {
+            display: flex; align-items: center; gap: 6px;
+            padding: 5px 14px; background: rgba(255,255,255,0.06);
+            border-radius: 32px; font-weight: bold; color: #f0ede8; font-size: 0.9rem;
+        }
+        .hud-stat .val { color: #ffd966; font-family: monospace; font-size: 1rem; }
+        .hud-progress { flex: 1; min-width: 150px; padding: 2px 6px; }
+        .progress-track { height: 10px; background: #00000055; border-radius: 8px; overflow: hidden; }
+        .progress-fill {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, #ffd966, #ff9f43);
+            border-radius: 8px; transition: width 0.25s ease;
+        }
+        .progress-label { text-align: center; font-size: 0.72rem; color: #9fb3c8; margin-top: 3px; }
+        .progress-label b { color: #ffd966; }
+        .hud-stars { color: #ffd966; letter-spacing: 3px; font-size: 1rem; }
+
+        /* ---------- 工具栏 ---------- */
         .toolbar {
             display: flex;
             flex-wrap: wrap;
+            gap: 10px;
             justify-content: center;
-            gap: 12px;
-            margin-bottom: 24px;
-            background: rgba(0, 0, 0, 0.45);
-            padding: 12px 20px;
-            border-radius: 80px;
-            backdrop-filter: blur(4px);
             align-items: center;
+            margin-bottom: 18px;
         }
+        .tool-group {
+            display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+            background: rgba(0,0,0,0.35); padding: 8px 14px;
+            border-radius: 40px; border: 1px solid #ffffff14;
+        }
+        .tool-group .glabel { font-size: 0.72rem; color: #9fb3c8; font-weight: bold; letter-spacing: 0.5px; }
 
         .btn {
-            background: #ffd966;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 48px;
-            font-weight: bold;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: 0.1s linear;
-            box-shadow: 0 4px 0 #aa6f20;
-            color: #3b2a1f;
-            font-family: inherit;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+            background: #ffd966; border: none;
+            padding: 9px 16px; border-radius: 48px;
+            font-weight: bold; font-size: 0.88rem; cursor: pointer;
+            transition: 0.1s linear; box-shadow: 0 4px 0 #aa6f20;
+            color: #3b2a1f; font-family: inherit;
+            display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
         }
-
         .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #aa6f20; }
         .btn-primary { background: #4c9aff; color: white; box-shadow: 0 4px 0 #1f4870; }
         .btn-warning { background: #f5a97f; color: #3c2a1f; box-shadow: 0 4px 0 #b45f2b; }
         .btn-success { background: #6fcf97; box-shadow: 0 4px 0 #2c6e49; color: #1f3b2c; }
         .btn-dark { background: #5d6e7e; box-shadow: 0 4px 0 #2c3e44; color: white; }
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
 
         select, input[type="file"], input[type="number"] {
-            background: #ecf0f1;
-            border: none;
-            padding: 8px 18px;
-            border-radius: 48px;
-            font-weight: bold;
-            font-family: monospace;
-            cursor: pointer;
-            font-size: 0.9rem;
+            background: #ecf0f1; border: none;
+            padding: 8px 14px; border-radius: 48px;
+            font-weight: bold; font-family: inherit; cursor: pointer; font-size: 0.85rem; color: #22303a;
         }
 
-        input[type="number"] {
-            width: 80px;
-            text-align: center;
+        .file-btn {
+            background: #a2b9c6; color: #1f2a33; padding: 8px 16px;
+            border-radius: 48px; font-weight: bold; cursor: pointer;
+            font-size: 0.85rem; box-shadow: 0 3px 0 #64757f; font-family: inherit;
+            display: inline-flex; align-items: center; gap: 6px;
         }
+        .file-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #64757f; }
 
-        /* 主内容区: 拼图区域占据绝大部分空间，侧边栏固定宽度 */
-        .info-area {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 24px;
-            align-items: stretch;
+        .seg { display: flex; background: #00000055; border-radius: 40px; padding: 4px; gap: 4px; }
+        .seg button {
+            border: none; background: transparent; color: #cdd8e2;
+            padding: 8px 14px; border-radius: 32px; font-weight: bold; cursor: pointer; font-family: inherit; font-size: 0.85rem;
         }
+        .seg button.active { background: #4c9aff; color: #fff; box-shadow: 0 3px 0 #1f4870; }
 
-        /* 拼图区域 - 弹性放大，自适应宽度 */
+        .rc-input {
+            display: flex; align-items: center; gap: 6px;
+            background: #ecf0f1; border-radius: 48px; padding: 4px 10px;
+        }
+        .rc-input input { width: 50px; border: none; background: transparent; text-align: center; font-family: monospace; font-weight: bold; color: #22303a; padding: 6px 0; }
+        .rc-input span { color: #3b2a1f; font-weight: bold; }
+
+        /* ---------- 主内容区 ---------- */
+        .info-area { display: flex; flex-wrap: wrap; gap: 20px; align-items: stretch; }
+
         .puzzle-area {
-            flex: 4;
-            min-width: 280px;
+            flex: 4; min-width: 280px;
             background: #1e2a2f;
-            border-radius: 48px;
-            padding: 20px;
+            border-radius: 36px;
+            padding: 18px;
             box-shadow: inset 0 0 0 1px #ffffff20, 0 12px 24px black;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            display: flex; justify-content: center; align-items: center;
+            position: relative;
         }
-
         canvas#puzzleCanvas {
-            display: block;
-            background: #2a2e33;
-            border-radius: 28px;
+            display: block; background: #2a2e33;
+            border-radius: 24px;
             box-shadow: 0 8px 18px rgba(0,0,0,0.5);
             cursor: pointer;
-            width: 100%;
-            height: auto;
+            width: 100%; height: auto;
             object-fit: contain;
+            touch-action: none;
         }
 
-        /* 侧边栏 */
         .side-panel {
-            flex: 1.2;
-            min-width: 240px;
-            background: rgba(0, 0, 0, 0.55);
-            border-radius: 44px;
-            padding: 20px;
-            backdrop-filter: blur(8px);
-            color: #f0ede8;
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
+            flex: 1.2; min-width: 250px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 32px; padding: 18px;
+            backdrop-filter: blur(8px); color: #f0ede8;
+            display: flex; flex-direction: column; gap: 14px;
+            max-height: 92vh; overflow-y: auto;
         }
+        .card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #ffffff14;
+            border-radius: 24px; padding: 14px;
+        }
+        .card h4 { font-size: 0.85rem; color: #ffd966; margin-bottom: 10px; letter-spacing: 1px; }
 
-        .preview-section {
-            text-align: center;
-            border-bottom: 1px dashed #ffd966;
-            padding-bottom: 16px;
-        }
-
-        .preview-img {
-            margin-top: 12px;
-        }
+        .preview-head { display: flex; gap: 8px; justify-content: center; }
+        .preview-img { margin-top: 10px; }
         .preview-img img {
-            max-width: 100%;
-            max-height: 150px;
-            border-radius: 24px;
-            box-shadow: 0 5px 12px black;
-            object-fit: contain;
-            background: #1e1a14;
+            max-width: 100%; max-height: 140px; border-radius: 18px;
+            box-shadow: 0 5px 12px black; object-fit: contain; background: #1e1a14; display: block; margin: 0 auto;
         }
         .hidden-preview { display: none; }
 
+        .rec-label { text-align: center; font-size: 0.8rem; color: #cdd8e2; margin-bottom: 10px; font-weight: bold; }
+        .rec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .rec-item { background: #00000033; border-radius: 16px; padding: 10px; text-align: center; }
+        .rec-item .rk { font-size: 0.7rem; color: #9fb3c8; }
+        .rec-item .rv { font-size: 1.05rem; font-weight: bold; color: #ffd966; margin-top: 4px; font-family: monospace; }
+        .total-wins { text-align: center; margin-top: 10px; font-size: 0.78rem; color: #9fb3c8; }
+        .total-wins b { color: #6fcf97; font-size: 1rem; }
+
+        .achieve-list { display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; }
+        .ach-item { display: flex; gap: 10px; align-items: center; background: #00000033; border-radius: 16px; padding: 8px 12px; border: 1px solid transparent; }
+        .ach-item.locked { opacity: 0.38; filter: grayscale(1); }
+        .ach-item .ai { font-size: 1.25rem; }
+        .ach-item .an { font-size: 0.85rem; font-weight: bold; }
+        .ach-item .ad { font-size: 0.7rem; color: #9fb3c8; }
+
+        .sound-row { display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 0.9rem; }
+        .switch { position: relative; display: inline-block; width: 46px; height: 25px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; inset: 0; background: #3a4a5a; border-radius: 25px; transition: 0.2s; }
+        .slider:before { content: ""; position: absolute; height: 19px; width: 19px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.2s; }
+        .switch input:checked + .slider { background: #6fcf97; }
+        .switch input:checked + .slider:before { transform: translateX(21px); }
+
         .hint-box {
-            background: #00000066;
-            border-radius: 28px;
-            padding: 12px;
-            font-size: 0.85rem;
-            text-align: center;
-            line-height: 1.4;
+            background: #00000066; border-radius: 20px; padding: 12px;
+            font-size: 0.82rem; text-align: center; line-height: 1.5; color: #e8e2d6;
         }
+        .hint-box strong { color: #ffd966; }
 
-        .sound-toggle {
-            display: flex;
-            justify-content: center;
-            gap: 18px;
-            align-items: center;
-            background: rgba(0,0,0,0.3);
-            border-radius: 48px;
-            padding: 8px;
-        }
+        footer { font-size: 0.75rem; text-align: center; margin-top: 20px; color: #bbaacc; }
 
-        /* 庆祝动画 */
+        /* ---------- 庆祝 / 浮层 ---------- */
         .celebration {
-            position: fixed;
-            top: 50%;
-            left: 50%;
+            position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             background: radial-gradient(circle, #ffec99, #ffbb77);
-            padding: 24px 48px;
-            border-radius: 100px;
-            font-size: 2rem;
-            font-weight: bold;
-            color: #b64926;
-            z-index: 1000;
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            box-shadow: 0 0 60px gold;
+            padding: 22px 44px; border-radius: 100px;
+            font-size: 1.8rem; font-weight: bold; color: #b64926;
+            z-index: 1000; display: flex; gap: 16px; align-items: center;
+            box-shadow: 0 0 60px gold; white-space: nowrap;
             animation: bouncePop 0.6s cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
             pointer-events: none;
-            white-space: nowrap;
         }
-
+        .celebration .stars { font-size: 1.4rem; color: #8a5a00; }
         @keyframes bouncePop {
-            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3);}
-            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1);}
-            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); visibility: hidden;}
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); visibility: hidden; }
         }
 
-        footer {
-            font-size: 0.75rem;
-            text-align: center;
-            margin-top: 24px;
-            color: #bbaacc;
+        .toast {
+            position: fixed; right: 18px; top: 18px;
+            transform: translateX(130%);
+            transition: transform 0.35s cubic-bezier(0.34, 1.4, 0.64, 1);
+            background: #1c2a33f2; border: 1px solid #ffd96666; color: #ffe9b0;
+            padding: 12px 20px; border-radius: 48px; z-index: 1200; font-weight: bold;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px); max-width: 78vw;
         }
+        .toast.show { transform: translateX(0); }
 
-        @media (max-width: 850px) {
-            .game-container { padding: 16px; }
-            .toolbar { border-radius: 48px; gap: 10px; }
-            .btn, select, input { padding: 6px 14px; font-size: 0.8rem; }
-            .celebration { font-size: 1.2rem; padding: 12px 24px; white-space: nowrap; }
-            .side-panel { min-width: 200px; }
+        .stars-pop { position: fixed; top: 40%; left: 50%; transform: translate(-50%,-50%); z-index: 1105; pointer-events: none; font-size: 3rem; letter-spacing: 8px; color: #ffd966; animation: starPop 1.2s ease forwards; text-shadow: 0 0 20px gold; }
+        @keyframes starPop { 0% { opacity: 0; transform: translate(-50%,-50%) scale(0.4); } 40% { opacity: 1; transform: translate(-50%,-50%) scale(1.3); } 100% { opacity: 0; transform: translate(-50%,-60%) scale(1); } }
+
+        /* ---------- 响应式 ---------- */
+        @media (max-width: 900px) {
+            body { padding: 12px; }
+            .game-container { padding: 12px; border-radius: 32px; }
+            .hud-bar { gap: 6px; padding: 8px 10px; }
+            .hud-stat { padding: 4px 10px; font-size: 0.78rem; }
+            .toolbar { gap: 8px; }
+            .tool-group { padding: 6px 10px; }
+            .btn { padding: 8px 12px; font-size: 0.8rem; }
+            .seg button { padding: 7px 10px; font-size: 0.78rem; }
+            .side-panel { max-height: none; overflow: visible; }
+            .celebration { font-size: 1.1rem; padding: 12px 24px; }
+            .celebration .stars { font-size: 1rem; }
         }
     </style>
 </head>
 <body>
 <div class="game-container">
-    <div class="toolbar">
-        <input type="file" id="uploadImage" accept="image/jpeg,image/png,image/webp">
-        <div style="display: flex; gap: 8px; background: #2c3e2e80; padding: 5px 16px; border-radius: 48px; align-items:center;">
-            <span style="color:white; font-weight:500;">分割数</span>
-            <input type="number" id="gridNumInput" min="2" max="6" value="3" step="1">
-            <span style="color:white;">x</span>
-            <span id="gridNumDisplay" style="color:#ffd966; font-weight:bold;">3</span>
+
+    <header class="hud-bar">
+        <div class="hud-stat"><span id="modeLabel">🧩 交换拼图</span></div>
+        <div class="hud-stat">⏱ <span class="val" id="hudTimer">00:00</span></div>
+        <div class="hud-stat">👣 <span class="val" id="hudMoves">0</span></div>
+        <div class="hud-progress">
+            <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="progress-label">完成度 <b id="progressVal">0%</b></div>
         </div>
-        <button class="btn btn-primary" id="generateBtn">🎲 生成 & 打乱</button>
-        <button class="btn" id="hintBtn">💡 提示</button>
-        <button class="btn btn-warning" id="resetBtn">🔄 一键还原</button>
-        <button class="btn btn-success" id="saveBtn">📸 保存拼图快照</button>
+        <div class="hud-stat hud-stars" id="hudStars">☆☆☆</div>
+    </header>
+
+    <div class="toolbar">
+        <div class="tool-group">
+            <span class="glabel">🖼 图片</span>
+            <label class="file-btn">📤 上传<input type="file" id="uploadImage" accept="image/jpeg,image/png,image/webp" style="display:none;"></label>
+            <select id="gallerySelect">
+                <option value="sunset">🌅 演示·落日海岸</option>
+                <option value="geo">🔷 演示·几何星空</option>
+                <option value="forest">🌲 演示·绿色森林</option>
+                <option value="waves">🌊 演示·彩色波光</option>
+                <option value="net">🌐 网络示例图</option>
+            </select>
+        </div>
+        <div class="tool-group">
+            <span class="glabel">🧩 模式</span>
+            <div class="seg" id="modeSeg">
+                <button data-mode="swap" class="active">交换</button>
+                <button data-mode="slide">滑动</button>
+                <button data-mode="rotate">旋转</button>
+            </div>
+        </div>
+        <div class="tool-group">
+            <span class="glabel">🔢 难度</span>
+            <select id="presetSelect">
+                <option value="easy">简单 3×3</option>
+                <option value="medium" selected>中等 4×4</option>
+                <option value="hard">困难 5×5</option>
+                <option value="master">大师 6×6</option>
+                <option value="custom">自定义</option>
+            </select>
+            <div class="rc-input">
+                <input type="number" id="rowInput" min="2" max="8" value="4">
+                <span>×</span>
+                <input type="number" id="colInput" min="2" max="8" value="4">
+            </div>
+        </div>
+        <div class="tool-group">
+            <span class="glabel">🎮 操作</span>
+            <button class="btn btn-primary" id="generateBtn">🎲 新一局</button>
+            <button class="btn" id="undoBtn">↩️ 撤销</button>
+            <button class="btn" id="hintBtn">💡 提示</button>
+            <button class="btn btn-warning" id="resetBtn">🔄 还原</button>
+            <button class="btn btn-success" id="saveBtn">📸 快照</button>
+        </div>
     </div>
 
     <div class="info-area">
@@ -237,461 +305,978 @@
             <canvas id="puzzleCanvas"></canvas>
         </div>
         <div class="side-panel">
-            <div class="preview-section">
-                <button id="togglePreviewBtn" class="btn btn-dark" style="padding: 6px 14px;">🖼️ 显示/隐藏原图</button>
-                <div id="previewContainer" class="preview-img hidden-preview">
-                    <div style="margin:10px 0 5px;">📷 原始参考</div>
-                    <img id="previewImg" alt="预览图" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%233a4c5c'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23ffd966' font-size='14'%3E上传图片%3C/text%3E%3C/svg%3E">
+            <div class="card">
+                <div class="preview-head">
+                    <button id="togglePreviewBtn" class="btn btn-dark btn-sm">🖼 显示原图</button>
+                    <button id="saveOriginalBtn" class="btn btn-sm" style="background:#a2b9c6;color:#1f2a33;">💾 保存原图</button>
                 </div>
-                <button id="saveOriginalBtn" class="btn" style="margin-top:12px; background:#a2b9c6;">💾 保存原始图片</button>
+                <div id="previewContainer" class="preview-img hidden-preview">
+                    <img id="previewImg" alt="预览图" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%233a4c5c'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23ffd966' font-size='14'%3E选择图片%3C/text%3E%3C/svg%3E">
+                </div>
             </div>
-            <div class="hint-box">
-                🎯 <strong>经典拼图玩法</strong><br>
-                点击拼图块 → 再点击另一块 → 交换位置！<br>
-                完整还原图像即可获胜 ✨
+
+            <div class="card">
+                <h4>🏆 最佳战绩</h4>
+                <div class="rec-label" id="recLabel">交换拼图 4×4</div>
+                <div class="rec-grid">
+                    <div class="rec-item"><div class="rk">⏱ 最佳用时</div><div class="rv" id="recTime">--:--</div></div>
+                    <div class="rec-item"><div class="rk">👣 最少步数</div><div class="rv" id="recMoves">--</div></div>
+                    <div class="rec-item"><div class="rk">⭐ 最佳星级</div><div class="rv" id="recStars">☆☆☆</div></div>
+                    <div class="rec-item"><div class="rk">🎮 对局 / 胜</div><div class="rv" id="recGames">0 / 0</div></div>
+                </div>
+                <div class="total-wins">累计通关 <b id="totalWins">0</b> 局</div>
             </div>
-            <div class="sound-toggle">
-                <span>🔊 音效</span>
-                <label style="cursor:pointer;"><input type="checkbox" id="soundCheckbox" checked> 开/关</label>
+
+            <div class="card">
+                <h4>🎖 成就徽章</h4>
+                <div class="achieve-list" id="achieveList"></div>
             </div>
-            <div style="font-size:12px; text-align:center; background:#00000044; border-radius:32px; padding:6px;">
-                ⚡ 超大自适应画布 | 任意图片比例完美适配
+
+            <div class="card sound-card">
+                <div class="sound-row">
+                    <span>🔊 音效</span>
+                    <label class="switch"><input type="checkbox" id="soundCheckbox" checked><span class="slider"></span></label>
+                </div>
             </div>
+
+            <div class="hint-box" id="howToPlay">🎯 <strong>交换拼图</strong><br>点击或拖拽两块交换位置，还原图像即获胜 ✨</div>
         </div>
     </div>
-    <footer>✨ 巨幕拼图体验 · 全屏自适应 · 智能辅助系统 ✨</footer>
+    <footer>✨ 巨幕拼图体验 · 三种模式 · 计时评级 · 成就徽章 ✨</footer>
 </div>
 
 <script>
-    (function(){
-        // ---------- DOM 元素 ----------
-        const fileInput = document.getElementById('uploadImage');
-        const gridNumInput = document.getElementById('gridNumInput');
-        const gridNumDisplay = document.getElementById('gridNumDisplay');
-        const generateBtn = document.getElementById('generateBtn');
-        const hintBtn = document.getElementById('hintBtn');
-        const resetBtn = document.getElementById('resetBtn');
-        const saveBtn = document.getElementById('saveBtn');
-        const saveOriginalBtn = document.getElementById('saveOriginalBtn');
-        const togglePreviewBtn = document.getElementById('togglePreviewBtn');
-        const previewContainer = document.getElementById('previewContainer');
-        const previewImg = document.getElementById('previewImg');
-        const puzzleCanvas = document.getElementById('puzzleCanvas');
-        const soundCheckbox = document.getElementById('soundCheckbox');
-        const ctx = puzzleCanvas.getContext('2d');
-        
-        // ---------- 游戏状态 ----------
-        let originalImage = null;          // 原始图片对象
-        let rows = 3, cols = 3;             // 当前分割数量（正方形网格）
-        let tileOrder = [];                 // 拼图顺序：每个位置存放原始碎片索引
-        let correctOrder = [];              // 正确顺序 [0,1,2,...]
-        let selectedTileIndex = null;       // 当前选中的拼图块索引
-        let gameCompleted = false;
-        
-        // 存储每个碎片的源矩形 (基于原图实际像素，保持原尺寸)
-        let tileSrcRects = [];
-        // 存储每个碎片的离屏图像 (矩形，用于快速渲染)
-        let tileImages = [];
-        let canvasDisplaySize = { width: 0, height: 0 };
-        
-        // 音效系统
-        let audioCtx = null;
-        let soundEnabled = true;
-        
-        function initAudio() {
-            if (audioCtx) return;
-            try {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            } catch(e) { console.warn("不支持音频"); }
+(function(){
+    // ==================== DOM ====================
+    const $ = id => document.getElementById(id);
+    const fileInput = $('uploadImage');
+    const gallerySelect = $('gallerySelect');
+    const rowInput = $('rowInput'), colInput = $('colInput');
+    const presetSelect = $('presetSelect');
+    const modeSeg = $('modeSeg');
+    const generateBtn = $('generateBtn'), undoBtn = $('undoBtn');
+    const hintBtn = $('hintBtn'), resetBtn = $('resetBtn'), saveBtn = $('saveBtn');
+    const saveOriginalBtn = $('saveOriginalBtn'), togglePreviewBtn = $('togglePreviewBtn');
+    const previewContainer = $('previewContainer'), previewImg = $('previewImg');
+    const puzzleCanvas = $('puzzleCanvas'), ctx = puzzleCanvas.getContext('2d');
+    const soundCheckbox = $('soundCheckbox');
+    const modeLabel = $('modeLabel');
+    const hudTimer = $('hudTimer'), hudMoves = $('hudMoves'), hudStars = $('hudStars');
+    const progressFill = $('progressFill'), progressVal = $('progressVal');
+    const recLabel = $('recLabel'), recTime = $('recTime'), recMoves = $('recMoves');
+    const recStars = $('recStars'), recGames = $('recGames'), totalWinsEl = $('totalWins');
+    const achieveList = $('achieveList'), howToPlay = $('howToPlay');
+
+    // ==================== 游戏状态 ====================
+    let originalImage = null;
+    let rows = 4, cols = 4;
+    let mode = 'swap'; // swap | slide | rotate
+    let tileOrder = [];    // 每格存放的源碎片索引
+    let rotations = [];    // 旋转模式: 每格角度
+    let selectedTileIndex = null;
+    let gameCompleted = false;
+
+    let startTime = 0, elapsedMs = 0, timerInterval = null;
+    let moves = 0, hintsUsed = 0;
+    let undoStack = [];
+
+    let tileSrcRects = [], tileImages = [];
+    let canvasDisplaySize = { w: 0, h: 0 };
+    let dpr = 1;
+
+    let dragState = null, dragGhost = null, dragging = false;
+    let animations = [], animFrame = null;
+    let hintHighlight = null, hintTimer = null;
+
+    // ==================== 记录与成就 ====================
+    const RECORDS_KEY = 'pintu_records_v1';
+    const ACHIEVE_KEY = 'pintu_achievements_v1';
+    let records = loadJSON(RECORDS_KEY, {});
+    let achievements = loadJSON(ACHIEVE_KEY, {});
+
+    const AchieveDefs = [
+        { id: 'first_win',  name: '初次相遇',   desc: '完成第一局拼图',     icon: '🌟' },
+        { id: 'no_hint',    name: '无师自通',   desc: '不使用提示完成一局', icon: '🧠' },
+        { id: 'speed_60',   name: '闪电手',     desc: '60秒内通关',         icon: '⚡' },
+        { id: 'triple_star',name: '完美大师',   desc: '获得3星评价',        icon: '💎' },
+        { id: 'ten_wins',   name: '拼图达人',   desc: '累计通关10局',       icon: '🏆' },
+        { id: 'slide_win',  name: '华容道高手', desc: '滑动模式通关',       icon: '🎯' },
+        { id: 'rotate_win', name: '旋转艺术家', desc: '旋转模式通关',       icon: '🔄' },
+        { id: 'big_board',  name: '巨幕挑战',   desc: '5×5及以上通关',      icon: '🌌' },
+    ];
+
+    function loadJSON(key, fallback) {
+        try { return JSON.parse(localStorage.getItem(key)) || fallback; }
+        catch (e) { return fallback; }
+    }
+    function saveRecords() { try { localStorage.setItem(RECORDS_KEY, JSON.stringify(records)); } catch (e) {} }
+    function saveAchievements() { try { localStorage.setItem(ACHIEVE_KEY, JSON.stringify(achievements)); } catch (e) {} }
+
+    // ==================== 音效 ====================
+    let audioCtx = null, soundEnabled = true;
+
+    function initAudio() {
+        if (audioCtx) return;
+        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        catch (e) { console.warn('不支持音频'); }
+    }
+    function beep(freq, dur, type, gain, delay) {
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime + (delay || 0);
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.type = type || 'triangle';
+        osc.frequency.value = freq;
+        g.gain.setValueAtTime(gain || 0.18, now);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+        osc.connect(g); g.connect(audioCtx.destination);
+        osc.start(now); osc.stop(now + dur);
+    }
+    function playSound(type) {
+        if (!soundEnabled) return;
+        if (!audioCtx) initAudio();
+        if (!audioCtx) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        switch (type) {
+            case 'select':      beep(540, 0.07, 'triangle', 0.12); break;
+            case 'swap':        beep(640, 0.09, 'triangle', 0.16); break;
+            case 'slide':       beep(560, 0.08, 'sine', 0.14); break;
+            case 'rotate':      beep(700, 0.08, 'triangle', 0.14); break;
+            case 'undo':        beep(480, 0.1, 'sine', 0.15); break;
+            case 'hint':        beep(880, 0.14, 'sine', 0.14); beep(1174, 0.16, 'sine', 0.12, 0.08); break;
+            case 'reset':       beep(420, 0.16, 'sine', 0.15); break;
+            case 'achievement': beep(740, 0.1, 'triangle', 0.16); beep(988, 0.12, 'triangle', 0.16, 0.1); break;
+            case 'complete':    [523, 659, 784, 1046].forEach((f, i) => beep(f, 0.4, 'triangle', 0.18, i * 0.12)); break;
         }
-        
-        function playSound(type) {
-            if (!soundEnabled) return;
-            if (!audioCtx) initAudio();
-            if (!audioCtx) return;
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const now = audioCtx.currentTime;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            let freq = 720, dur = 0.12;
-            if (type === 'swap') { freq = 640; dur = 0.1; }
-            else if (type === 'complete') { freq = 1046; dur = 0.45;
-                const osc2 = audioCtx.createOscillator();
-                const gain2 = audioCtx.createGain();
-                osc2.connect(gain2);
-                gain2.connect(audioCtx.destination);
-                osc2.frequency.value = 1318.52;
-                gain2.gain.setValueAtTime(0.2, now);
-                gain2.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-                osc2.start();
-                osc2.stop(now + dur);
-            } else if (type === 'hint') { freq = 880; dur = 0.18; }
-            else if (type === 'reset') { freq = 523.25; dur = 0.2; }
-            osc.frequency.value = freq;
-            gain.gain.setValueAtTime(0.2, now);
-            gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-            osc.start();
-            osc.stop(now + dur);
+    }
+
+    // ==================== 工具函数 ====================
+    function shuffleArray(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
         }
-        
-        function showCelebration() {
-            if (gameCompleted) return;
-            gameCompleted = true;
-            playSound('complete');
-            const div = document.createElement('div');
-            div.className = 'celebration';
-            div.innerHTML = '🎉 完美复原 · 拼图大师 🎉 🧩✨';
-            document.body.appendChild(div);
-            setTimeout(() => div.remove(), 1600);
-            puzzleCanvas.style.filter = 'drop-shadow(0 0 8px gold)';
-            setTimeout(() => puzzleCanvas.style.filter = '', 600);
+        return arr;
+    }
+    function clampInt(v, lo, hi) {
+        let n = parseInt(v);
+        if (isNaN(n)) n = lo;
+        return Math.min(hi, Math.max(lo, n));
+    }
+    function fmtTime(ms) {
+        const s = Math.floor(ms / 1000);
+        return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+    }
+    function modeName(m) {
+        return m === 'slide' ? '滑动拼图' : m === 'rotate' ? '旋转拼图' : '交换拼图';
+    }
+    function easeInOut(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+    function rr(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+    }
+
+    function toast(msg, icon) {
+        const el = document.createElement('div');
+        el.className = 'toast';
+        el.textContent = (icon || '✨') + ' ' + msg;
+        document.body.appendChild(el);
+        requestAnimationFrame(() => el.classList.add('show'));
+        setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 400); }, 2600);
+    }
+
+    // ==================== 画布尺寸 ====================
+    function computeCanvasSize() {
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        if (!originalImage) { canvasDisplaySize = { w: 500, h: 500 }; return; }
+        const cr = document.querySelector('.puzzle-area').getBoundingClientRect();
+        let maxW = cr.width - 36;
+        let maxH = window.innerHeight * 0.66;
+        const aspect = originalImage.height / originalImage.width;
+        let tw = maxW, th = tw * aspect;
+        if (th > maxH) { th = maxH; tw = th / aspect; }
+        canvasDisplaySize = { w: Math.max(260, tw), h: Math.max(200, th) };
+        puzzleCanvas.style.width = Math.round(canvasDisplaySize.w) + 'px';
+        puzzleCanvas.style.height = Math.round(canvasDisplaySize.h) + 'px';
+    }
+
+    function buildTileImages() {
+        const W = canvasDisplaySize.w, H = canvasDisplaySize.h;
+        const tw = W / cols, th = H / rows;
+        const twb = Math.max(1, Math.round(tw * dpr)), thb = Math.max(1, Math.round(th * dpr));
+        tileImages = [];
+        const total = rows * cols;
+        for (let idx = 0; idx < total; idx++) {
+            const r = tileSrcRects[idx];
+            const oc = document.createElement('canvas');
+            oc.width = twb; oc.height = thb;
+            const octx = oc.getContext('2d');
+            octx.drawImage(originalImage, r.sx, r.sy, r.sw, r.sh, 0, 0, twb, thb);
+            tileImages.push(oc);
         }
-        
-        function resetCompletionFlag() { gameCompleted = false; }
-        
-        function checkVictory() {
-            if (gameCompleted) return true;
-            let win = true;
-            for (let i = 0; i < tileOrder.length; i++) {
-                if (tileOrder[i] !== correctOrder[i]) { win = false; break; }
-            }
-            if (win && tileOrder.length) { showCelebration(); return true; }
-            return false;
-        }
-        
-        function swapTiles(idxA, idxB) {
-            if (idxA === idxB) return;
-            [tileOrder[idxA], tileOrder[idxB]] = [tileOrder[idxB], tileOrder[idxA]];
-            renderPuzzle();
-            playSound('swap');
-            checkVictory();
-        }
-        
-        // ---------- 核心：计算画布尺寸，使其在 puzzle-area 内尽可能大，且保持图片比例 ----------
-        function computeOptimalCanvasSize() {
-            if (!originalImage) return { width: 500, height: 500 };
-            const container = document.querySelector('.puzzle-area');
-            const containerRect = container.getBoundingClientRect();
-            // 可用宽度（减去内边距）
-            let maxWidth = containerRect.width - 40;
-            let maxHeight = window.innerHeight * 0.7;  // 不超过视口70%
-            const imgAspect = originalImage.height / originalImage.width;
-            let targetWidth = maxWidth;
-            let targetHeight = targetWidth * imgAspect;
-            if (targetHeight > maxHeight) {
-                targetHeight = maxHeight;
-                targetWidth = targetHeight / imgAspect;
-            }
-            // 保证最小尺寸
-            targetWidth = Math.max(280, targetWidth);
-            targetHeight = Math.max(200, targetHeight);
-            return { width: targetWidth, height: targetHeight };
-        }
-        
-        // 构建所有碎片的离屏图像（根据当前显示尺寸）
-        function buildTileImages() {
-            if (!originalImage) return;
-            const total = rows * cols;
-            const tileW = canvasDisplaySize.width / cols;
-            const tileH = canvasDisplaySize.height / rows;
-            tileImages = [];
-            for (let idx = 0; idx < total; idx++) {
-                const srcRect = tileSrcRects[idx];
-                const offCanvas = document.createElement('canvas');
-                offCanvas.width = tileW;
-                offCanvas.height = tileH;
-                const offCtx = offCanvas.getContext('2d');
-                offCtx.drawImage(originalImage, srcRect.sx, srcRect.sy, srcRect.sw, srcRect.sh, 0, 0, tileW, tileH);
-                tileImages.push(offCanvas);
-            }
-        }
-        
-        // 渲染主画布 (直接拼接碎片)
-        function renderPuzzle() {
-            if (!originalImage || tileImages.length === 0) return;
-            const w = canvasDisplaySize.width;
-            const h = canvasDisplaySize.height;
-            puzzleCanvas.width = w;
-            puzzleCanvas.height = h;
-            ctx.clearRect(0, 0, w, h);
-            const tileW = w / cols;
-            const tileH = h / rows;
-            // 绘制所有拼图块
-            for (let i = 0; i < rows; i++) {
-                for (let j = 0; j < cols; j++) {
-                    const posIdx = i * cols + j;
-                    const srcIdx = tileOrder[posIdx];
-                    if (srcIdx === undefined) continue;
-                    const tileImg = tileImages[srcIdx];
-                    if (!tileImg) continue;
-                    const dx = j * tileW;
-                    const dy = i * tileH;
-                    ctx.drawImage(tileImg, dx, dy, tileW, tileH);
-                    // 绘制网格线（经典分割线）
-                    ctx.beginPath();
-                    ctx.strokeStyle = "#e0bc7e";
-                    ctx.lineWidth = 1.8;
-                    ctx.strokeRect(dx, dy, tileW, tileH);
-                    
-                    // 高亮选中的拼图块
-                    if (selectedTileIndex === posIdx) {
-                        ctx.save();
-                        ctx.globalAlpha = 0.45;
-                        ctx.fillStyle = "#ffffb0";
-                        ctx.fillRect(dx, dy, tileW, tileH);
-                        ctx.restore();
-                        // 加粗边框
-                        ctx.beginPath();
-                        ctx.strokeStyle = "#ffcc55";
-                        ctx.lineWidth = 4;
-                        ctx.strokeRect(dx + 1, dy + 1, tileW - 2, tileH - 2);
-                    }
-                }
-            }
-        }
-        
-        // 重新构建整个拼图系统 (核心刷新)
-        function rebuildPuzzle(keepOrder = false) {
-            if (!originalImage) return false;
-            rows = parseInt(gridNumInput.value);
-            cols = rows;
-            gridNumDisplay.innerText = rows;
-            
-            // 1. 计算最优画布尺寸
-            const newSize = computeOptimalCanvasSize();
-            canvasDisplaySize = { width: newSize.width, height: newSize.height };
-            // 设置 canvas 元素的 CSS 宽高（自适应父容器）
-            puzzleCanvas.style.width = '100%';
-            puzzleCanvas.style.height = 'auto';
-            
-            const imgW = originalImage.width;
-            const imgH = originalImage.height;
-            
-            // 2. 计算每个碎片的源矩形 (基于原图实际像素)
-            tileSrcRects = [];
-            const pieceW = imgW / cols;
-            const pieceH = imgH / rows;
-            for (let i = 0; i < rows; i++) {
-                for (let j = 0; j < cols; j++) {
-                    tileSrcRects.push({ sx: j * pieceW, sy: i * pieceH, sw: pieceW, sh: pieceH });
-                }
-            }
-            const total = rows * cols;
-            correctOrder = Array.from({length: total}, (_,k) => k);
-            if (!keepOrder || tileOrder.length !== total) {
-                tileOrder = [...correctOrder];
-                // 打乱，但不能完全一样
-                do { shuffleArray(tileOrder); } while (tileOrder.every((v,i)=> v === correctOrder[i]));
-            } else {
-                // 若顺序数组长度不一致，重置
-                if (tileOrder.length !== total) tileOrder = [...correctOrder];
-            }
-            selectedTileIndex = null;
-            resetCompletionFlag();
-            gameCompleted = false;
-            // 3. 构建碎片图像（依据新的画布尺寸）
-            buildTileImages();
-            renderPuzzle();
-            return true;
-        }
-        
-        function shuffleArray(arr) {
-            for (let i = arr.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [arr[i], arr[j]] = [arr[j], arr[i]];
-            }
-        }
-        
-        // 一键还原
-        function oneKeyReset() {
-            if (!originalImage) return;
-            tileOrder = [...correctOrder];
-            selectedTileIndex = null;
-            renderPuzzle();
-            playSound('reset');
-            resetCompletionFlag();
-            gameCompleted = false;
-            const toast = document.createElement('div');
-            toast.innerText = '✨ 已还原至完整图像 ✨';
-            toast.style.cssText = 'position:fixed; bottom:30%; left:50%; transform:translateX(-50%); background:#1f2a2fe6; padding:10px 28px; border-radius:48px; color:#ffdd99; z-index:999; font-weight:bold; backdrop-filter:blur(6px); font-size:1rem;';
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 1300);
-        }
-        
-        // 重新打乱
-        function reshufflePuzzle() {
-            if (!originalImage) { alert("请先上传图片"); return; }
-            rebuildPuzzle(false);
-            playSound('reset');
-        }
-        
-        // 提示功能：闪烁拼图区域 + 浮层提醒
-        function showHint() {
-            if (!originalImage) { alert("请上传图片后使用提示"); return; }
-            playSound('hint');
-            puzzleCanvas.style.boxShadow = '0 0 0 5px #ffdd88, 0 0 0 10px #ffaa55';
-            setTimeout(() => puzzleCanvas.style.boxShadow = '', 1500);
-            const hintDiv = document.createElement('div');
-            hintDiv.style.cssText = 'position:fixed; bottom:30px; right:30px; background:#000000aa; backdrop-filter:blur(16px); padding:10px 24px; border-radius:48px; color:#ffec9f; font-size:0.95rem; z-index:999; border:1px solid #ffcc77; font-weight:bold;';
-            hintDiv.innerHTML = '💡 提示：右侧可显示原图对比，或使用一键还原';
-            document.body.appendChild(hintDiv);
-            setTimeout(() => hintDiv.remove(), 3000);
-        }
-        
-        // 保存当前拼图快照
-        function saveSnapshot() {
-            if (!originalImage) { alert("无拼图内容"); return; }
-            const link = document.createElement('a');
-            link.download = 'puzzle_snapshot.png';
-            link.href = puzzleCanvas.toDataURL('image/png');
-            link.click();
-            playSound('swap');
-        }
-        
-        // 保存原始图片 (原尺寸)
-        function saveOriginalPicture() {
-            if (!originalImage) { alert("没有原始图片"); return; }
-            const canvas = document.createElement('canvas');
-            canvas.width = originalImage.width;
-            canvas.height = originalImage.height;
-            const tempCtx = canvas.getContext('2d');
-            tempCtx.drawImage(originalImage, 0, 0);
-            const link = document.createElement('a');
-            link.download = 'original_puzzle_image.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-            playSound('hint');
-        }
-        
-        // 上传图片处理
-        function handleImageUpload(file) {
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => {
-                    originalImage = img;
-                    previewImg.src = e.target.result;
-                    rebuildPuzzle(true);
-                    playSound('reset');
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-        
-        // canvas 点击交互
-        function onCanvasClick(e) {
-            if (!originalImage || tileOrder.length === 0) return;
-            const rect = puzzleCanvas.getBoundingClientRect();
-            // 实际 canvas 像素尺寸 (canvas.width/height) 与 CSS 尺寸的比例
-            const scaleX = canvasDisplaySize.width / rect.width;
-            const scaleY = canvasDisplaySize.height / rect.height;
-            let mouseX = (e.clientX - rect.left) * scaleX;
-            let mouseY = (e.clientY - rect.top) * scaleY;
-            if (mouseX < 0) mouseX = 0; if (mouseY < 0) mouseY = 0;
-            const tileW = canvasDisplaySize.width / cols;
-            const tileH = canvasDisplaySize.height / rows;
-            const colIdx = Math.floor(mouseX / tileW);
-            const rowIdx = Math.floor(mouseY / tileH);
-            if (rowIdx >= 0 && rowIdx < rows && colIdx >=0 && colIdx < cols) {
-                const clickedIdx = rowIdx * cols + colIdx;
-                if (selectedTileIndex === null) {
-                    selectedTileIndex = clickedIdx;
-                    renderPuzzle();
+    }
+
+    // ==================== 渲染 ====================
+    function isCellCorrect(pos) {
+        if (mode === 'rotate') return rotations[pos] === 0;
+        if (mode === 'slide') return pos === rows * cols - 1 ? tileOrder[pos] === -1 : tileOrder[pos] === pos;
+        return tileOrder[pos] === pos;
+    }
+
+    function drawSelection(dx, dy, tw, th) {
+        ctx.save();
+        ctx.globalAlpha = 0.4;
+        ctx.fillStyle = '#ffffb0';
+        ctx.fillRect(dx, dy, tw, th);
+        ctx.restore();
+        ctx.beginPath();
+        ctx.strokeStyle = '#ffcc55';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(dx + 1, dy + 1, tw - 2, th - 2);
+    }
+    function drawCorrectGlow(dx, dy, tw, th) {
+        ctx.save();
+        ctx.strokeStyle = '#6fcf97';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#6fcf97';
+        ctx.shadowBlur = 8;
+        ctx.strokeRect(dx + 2, dy + 2, tw - 4, th - 4);
+        ctx.restore();
+    }
+    function drawBlank(dx, dy, tw, th) {
+        ctx.save();
+        ctx.fillStyle = '#121a20';
+        rr(ctx, dx + 2, dy + 2, tw - 4, th - 4, 7);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff14';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.restore();
+    }
+    function drawHintPulse(dx, dy, tw, th, now) {
+        const a = 0.2 + 0.18 * Math.sin(now / 120);
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.fillStyle = '#ffd966';
+        ctx.fillRect(dx, dy, tw, th);
+        ctx.restore();
+        ctx.save();
+        ctx.strokeStyle = '#ffd966';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([6, 4]);
+        ctx.strokeRect(dx + 2, dy + 2, tw - 4, th - 4);
+        ctx.restore();
+        ctx.setLineDash([]);
+    }
+
+    function renderPuzzle() {
+        if (!originalImage) return;
+        const W = canvasDisplaySize.w, H = canvasDisplaySize.h;
+        puzzleCanvas.width = Math.round(W * dpr);
+        puzzleCanvas.height = Math.round(H * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, W, H);
+        const tw = W / cols, th = H / rows;
+        const now = performance.now();
+        const animTo = {};
+        for (const a of animations) animTo[a.to] = a;
+
+        for (let i = 0; i < rows; i++) {
+            for (let j = 0; j < cols; j++) {
+                const pos = i * cols + j;
+                const dx = j * tw, dy = i * th;
+                if (animTo[pos]) continue;
+                if (mode === 'slide' && tileOrder[pos] === -1) { drawBlank(dx, dy, tw, th); continue; }
+                const srcIdx = mode === 'rotate' ? pos : tileOrder[pos];
+                if (srcIdx === undefined || srcIdx === -1) continue;
+                const tile = tileImages[srcIdx];
+                if (!tile) continue;
+                if (mode === 'rotate') {
+                    ctx.save();
+                    ctx.translate(dx + tw / 2, dy + th / 2);
+                    ctx.rotate(rotations[pos] * Math.PI / 180);
+                    ctx.drawImage(tile, -tw / 2, -th / 2, tw, th);
+                    ctx.restore();
                 } else {
-                    if (selectedTileIndex !== clickedIdx) {
-                        swapTiles(selectedTileIndex, clickedIdx);
-                    }
-                    selectedTileIndex = null;
-                    renderPuzzle();
+                    ctx.drawImage(tile, dx, dy, tw, th);
                 }
-            } else if (selectedTileIndex !== null) {
-                selectedTileIndex = null;
-                renderPuzzle();
+                ctx.beginPath();
+                ctx.strokeStyle = '#e0bc7e';
+                ctx.lineWidth = 1.8;
+                ctx.strokeRect(dx, dy, tw, th);
+                if (mode === 'swap' && selectedTileIndex === pos) drawSelection(dx, dy, tw, th);
+                if (isCellCorrect(pos) && !gameCompleted) drawCorrectGlow(dx, dy, tw, th);
             }
         }
-        
-        function togglePreview() {
+
+        if (hintHighlight && hintHighlight.length) {
+            for (const pos of hintHighlight) {
+                drawHintPulse((pos % cols) * tw, Math.floor(pos / cols) * th, tw, th, now);
+            }
+        }
+
+        for (const a of animations) {
+            const fx = (a.from % cols) * tw, fy = Math.floor(a.from / cols) * th;
+            const tx = (a.to % cols) * tw, ty = Math.floor(a.to / cols) * th;
+            const p = Math.min(1, (now - a.t0) / a.dur);
+            const ex = fx + (tx - fx) * easeInOut(p);
+            const ey = fy + (ty - fy) * easeInOut(p);
+            const tile = tileImages[a.srcIdx];
+            if (tile) ctx.drawImage(tile, ex, ey, tw, th);
+            ctx.beginPath();
+            ctx.strokeStyle = '#e0bc7e';
+            ctx.lineWidth = 1.8;
+            ctx.strokeRect(ex, ey, tw, th);
+        }
+
+        if (dragging && dragGhost) {
+            const tile = tileImages[dragGhost.srcIdx];
+            const gx = dragGhost.x - tw / 2, gy = dragGhost.y - th / 2;
+            if (tile) {
+                ctx.save();
+                ctx.globalAlpha = 0.85;
+                ctx.drawImage(tile, gx, gy, tw, th);
+                ctx.restore();
+            }
+            ctx.beginPath();
+            ctx.strokeStyle = '#ffcc55';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(gx, gy, tw, th);
+        }
+    }
+
+    function requestAnimLoop() {
+        if (!animFrame) animFrame = requestAnimationFrame(animTick);
+    }
+    function animTick() {
+        const now = performance.now();
+        let any = false;
+        for (const a of animations) if ((now - a.t0) / a.dur < 1) any = true;
+        if (!any) animations = [];
+        renderPuzzle();
+        if (animations.length) animFrame = requestAnimationFrame(animTick);
+        else animFrame = null;
+    }
+
+    // ==================== HUD ====================
+    function updateHUD() {
+        hudTimer.textContent = fmtTime(elapsedMs);
+        hudMoves.textContent = moves;
+        const total = rows * cols;
+        let correct = 0;
+        for (let i = 0; i < total; i++) if (isCellCorrect(i)) correct++;
+        const pct = total ? Math.round(correct / total * 100) : 0;
+        progressFill.style.width = pct + '%';
+        progressVal.textContent = pct + '%';
+    }
+    function startTimer() {
+        startTime = Date.now() - elapsedMs;
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            if (!gameCompleted) { elapsedMs = Date.now() - startTime; updateHUD(); }
+        }, 500);
+    }
+    function stopTimer() {
+        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+        elapsedMs = Date.now() - startTime;
+    }
+
+    // ==================== 构建拼图 ====================
+    function isSolvableSlide(order, r, c) {
+        let inv = 0;
+        const seq = order.filter(v => v !== -1);
+        for (let i = 0; i < seq.length; i++)
+            for (let j = i + 1; j < seq.length; j++)
+                if (seq[i] > seq[j]) inv++;
+        const blank = order.indexOf(-1);
+        const blankRowFromBottom = r - 1 - Math.floor(blank / c);
+        return c % 2 === 1 ? inv % 2 === 0 : (inv + blankRowFromBottom) % 2 === 0;
+    }
+    function makeSlideOrder(total) {
+        let arr;
+        do {
+            arr = shuffleArray(Array.from({ length: total - 1 }, (_, k) => k));
+            arr.splice(Math.floor(Math.random() * total), 0, -1);
+            if (!isSolvableSlide(arr, rows, cols)) {
+                const idx = [];
+                for (let k = 0; k < arr.length; k++) if (arr[k] !== -1) idx.push(k);
+                if (idx.length >= 2) [arr[idx[0]], arr[idx[1]]] = [arr[idx[1]], arr[idx[0]]];
+            }
+        } while (arr.every((v, i) => (i === total - 1 ? v === -1 : v === i)));
+        return arr;
+    }
+
+    function buildPuzzle() {
+        const total = rows * cols;
+        tileSrcRects = [];
+        const imgW = originalImage.width, imgH = originalImage.height;
+        const pieceW = imgW / cols, pieceH = imgH / rows;
+        for (let i = 0; i < rows; i++)
+            for (let j = 0; j < cols; j++)
+                tileSrcRects.push({ sx: j * pieceW, sy: i * pieceH, sw: pieceW, sh: pieceH });
+
+        if (mode === 'slide') {
+            tileOrder = makeSlideOrder(total);
+            rotations = Array.from({ length: total }, () => 0);
+        } else if (mode === 'rotate') {
+            tileOrder = Array.from({ length: total }, (_, k) => k);
+            rotations = Array.from({ length: total }, () => [0, 90, 180, 270][Math.floor(Math.random() * 4)]);
+            if (rotations.every(r => r === 0)) rotations[0] = 90;
+        } else {
+            do { tileOrder = shuffleArray(Array.from({ length: total }, (_, k) => k)); }
+            while (tileOrder.every((v, i) => v === i));
+            rotations = Array.from({ length: total }, () => 0);
+        }
+        selectedTileIndex = null;
+        dragState = null; dragGhost = null; dragging = false;
+        animations = []; undoStack = [];
+        moves = 0; hintsUsed = 0; gameCompleted = false; elapsedMs = 0;
+        hintHighlight = null;
+        computeCanvasSize();
+        buildTileImages();
+        renderPuzzle();
+        updateHUD();
+        updateHowTo();
+        updateRecordsPanel();
+    }
+
+    function generateGame() {
+        if (!originalImage) { toast('请先选择图片', '📤'); return; }
+        rows = clampInt(rowInput.value, 2, 8);
+        cols = clampInt(colInput.value, 2, 8);
+        if (rows * cols > 64) { rows = 8; cols = 8; }
+        if (mode === 'rotate') cols = rows;
+        rowInput.value = rows; colInput.value = cols;
+        buildPuzzle();
+        startTimer();
+    }
+
+    // ==================== 模式操作 ====================
+    function pushUndo() {
+        undoStack.push({ tileOrder: tileOrder.slice(), rotations: rotations.slice() });
+        if (undoStack.length > 50) undoStack.shift();
+    }
+    function swapTiles(idxA, idxB) {
+        if (idxA === idxB) return;
+        pushUndo();
+        moves++;
+        const a = tileOrder[idxA], b = tileOrder[idxB];
+        tileOrder[idxA] = b; tileOrder[idxB] = a;
+        const now = performance.now();
+        if (tileImages[a]) animations.push({ srcIdx: a, from: idxA, to: idxB, t0: now, dur: 140 });
+        if (tileImages[b]) animations.push({ srcIdx: b, from: idxB, to: idxA, t0: now, dur: 140 });
+        playSound('swap');
+        renderPuzzle(); updateHUD(); requestAnimLoop();
+        checkVictory();
+    }
+    function slideTile(clickedPos) {
+        const blank = tileOrder.indexOf(-1);
+        if (blank === -1) return;
+        const cr = Math.floor(clickedPos / cols), cc = clickedPos % cols;
+        const br = Math.floor(blank / cols), bc = blank % cols;
+        let positions = [], step = 0, axis = '';
+        if (cr === br && cc !== bc) { axis = 'c'; step = bc > cc ? 1 : -1; }
+        else if (cc === bc && cr !== br) { axis = 'r'; step = br > cr ? 1 : -1; }
+        else return;
+        if (axis === 'c') { let p = cc; while (p !== bc) { positions.push(cr * cols + p); p += step; } }
+        else { let p = cr; while (p !== br) { positions.push(p * cols + cc); p += step; } }
+        if (!positions.length) return;
+        pushUndo();
+        moves++;
+        const now = performance.now();
+        for (let k = positions.length - 1; k >= 0; k--) {
+            const p = positions[k];
+            const to = axis === 'c' ? p + step : p + step * cols;
+            const src = tileOrder[p];
+            tileOrder[to] = src;
+            animations.push({ srcIdx: src, from: p, to, t0: now, dur: 120 });
+        }
+        tileOrder[positions[0]] = -1;
+        playSound('slide');
+        renderPuzzle(); updateHUD(); requestAnimLoop();
+        checkVictory();
+    }
+    function rotateTile(pos) {
+        pushUndo();
+        moves++;
+        rotations[pos] = (rotations[pos] + 90) % 360;
+        playSound('rotate');
+        renderPuzzle(); updateHUD();
+        checkVictory();
+    }
+    function undo() {
+        if (gameCompleted || !undoStack.length) { toast('没有可撤销的步骤', '↩️'); return; }
+        const s = undoStack.pop();
+        tileOrder = s.tileOrder; rotations = s.rotations;
+        moves = Math.max(0, moves - 1);
+        selectedTileIndex = null; dragState = null; dragGhost = null; dragging = false;
+        playSound('undo');
+        renderPuzzle(); updateHUD();
+    }
+    function oneKeyReset() {
+        if (!originalImage) return;
+        tileOrder = Array.from({ length: rows * cols }, (_, k) => k);
+        if (mode === 'slide') tileOrder[rows * cols - 1] = -1;
+        rotations = Array.from({ length: rows * cols }, () => 0);
+        moves = 0; undoStack = [];
+        gameCompleted = false;
+        selectedTileIndex = null; animations = []; hintHighlight = null;
+        hudStars.textContent = '☆☆☆';
+        playSound('reset');
+        renderPuzzle(); updateHUD();
+        toast('已还原至完整图像', '✨');
+    }
+
+    // ==================== 提示 ====================
+    function showHint() {
+        if (!originalImage) { toast('请先选择图片', '📤'); return; }
+        if (gameCompleted) { toast('拼图已完成啦！', '🎉'); return; }
+        hintsUsed++;
+        const total = rows * cols;
+        const misplaced = [];
+        for (let i = 0; i < total; i++) if (!isCellCorrect(i)) misplaced.push(i);
+        if (!misplaced.length) { toast('全部就位，直接获胜！', '🎉'); return; }
+        hintHighlight = misplaced;
+        clearTimeout(hintTimer);
+        hintTimer = setTimeout(() => { hintHighlight = null; renderPuzzle(); }, 3500);
+        playSound('hint');
+        renderPuzzle();
+        toast(`已高亮 ${misplaced.length} 块未归位碎片`, '💡');
+    }
+
+    // ==================== 胜利 / 评分 / 记录 / 成就 ====================
+    function parTime() {
+        const n = rows * cols;
+        if (mode === 'slide') return 25 + n * 4;
+        if (mode === 'rotate') return 10 + n * 1.5;
+        return 15 + n * 2.5;
+    }
+    function computeStars() {
+        const sec = elapsedMs / 1000;
+        const par = parTime();
+        let stars = 3;
+        if (hintsUsed > 0) stars = 2;
+        if (sec > par) stars--;
+        if (sec > par * 2) stars--;
+        return Math.max(1, stars);
+    }
+    function checkVictory() {
+        if (gameCompleted) return;
+        const total = rows * cols;
+        let win = true;
+        if (mode === 'rotate') {
+            for (const r of rotations) if (r !== 0) { win = false; break; }
+        } else {
+            for (let i = 0; i < total; i++) if (!isCellCorrect(i)) { win = false; break; }
+        }
+        if (!win) return;
+        gameCompleted = true;
+        stopTimer();
+        updateHUD();
+        const stars = computeStars();
+        hudStars.textContent = '★'.repeat(stars) + '☆'.repeat(3 - stars);
+        renderPuzzle();
+        playSound('complete');
+        launchConfetti();
+        showCelebration(stars);
+        saveRecord(stars);
+        checkAchievements();
+        updateRecordsPanel();
+    }
+    function saveRecord(stars) {
+        const key = mode + '_' + rows + 'x' + cols;
+        const r = records[key] || { bestTime: Infinity, bestMoves: Infinity, bestStars: 0, games: 0, wins: 0 };
+        r.games++; r.wins++;
+        if (elapsedMs < r.bestTime) r.bestTime = elapsedMs;
+        if (moves < r.bestMoves) r.bestMoves = moves;
+        if (stars > r.bestStars) r.bestStars = stars;
+        records[key] = r;
+        records._totalWins = (records._totalWins || 0) + 1;
+        saveRecords();
+    }
+    function checkAchievements() {
+        const newly = [];
+        const unlock = id => {
+            if (achievements[id]) return;
+            achievements[id] = true;
+            newly.push(AchieveDefs.find(a => a.id === id));
+        };
+        unlock('first_win');
+        if (hintsUsed === 0) unlock('no_hint');
+        if (elapsedMs <= 60000) unlock('speed_60');
+        if (computeStars() === 3) unlock('triple_star');
+        if ((records._totalWins || 0) >= 10) unlock('ten_wins');
+        if (mode === 'slide') unlock('slide_win');
+        if (mode === 'rotate') unlock('rotate_win');
+        if (rows >= 5) unlock('big_board');
+        if (newly.length) {
+            saveAchievements();
+            for (const a of newly) {
+                setTimeout(() => { toast('成就解锁：' + a.icon + ' ' + a.name, a.icon); playSound('achievement'); }, 300);
+            }
+            updateAchievementsPanel();
+        }
+    }
+
+    function updateRecordsPanel() {
+        const key = mode + '_' + rows + 'x' + cols;
+        const r = records[key];
+        recLabel.textContent = modeName(mode) + ' ' + rows + '×' + cols;
+        recTime.textContent = r && r.bestTime !== Infinity ? fmtTime(r.bestTime) : '--:--';
+        recMoves.textContent = r && r.bestMoves !== Infinity ? r.bestMoves : '--';
+        recStars.textContent = r && r.bestStars ? '★'.repeat(r.bestStars) + '☆'.repeat(3 - r.bestStars) : '☆☆☆';
+        recGames.textContent = r ? (r.games + ' / ' + r.wins) : '0 / 0';
+        totalWinsEl.textContent = records._totalWins || 0;
+    }
+    function updateAchievementsPanel() {
+        achieveList.innerHTML = '';
+        for (const a of AchieveDefs) {
+            const on = !!achievements[a.id];
+            const div = document.createElement('div');
+            div.className = 'ach-item' + (on ? '' : ' locked');
+            div.innerHTML = '<div class="ai">' + a.icon + '</div><div><div class="an">' + a.name + '</div><div class="ad">' + a.desc + '</div></div>';
+            achieveList.appendChild(div);
+        }
+    }
+    function updateHowTo() {
+        const t = mode === 'swap'
+            ? '点击或拖拽两块交换位置，还原图像即获胜'
+            : mode === 'slide'
+            ? '点击空位同行/列任意碎片滑动，空位到右下角即获胜'
+            : '点击碎片原地旋转90°，全部转正即获胜';
+        howToPlay.innerHTML = '🎯 <strong>' + modeName(mode) + '</strong><br>' + t + ' ✨';
+    }
+
+    // ==================== 庆祝 ====================
+    function showCelebration(stars) {
+        const div = document.createElement('div');
+        div.className = 'celebration';
+        div.innerHTML = '🎉 完美复原 <span class="stars">' + '★'.repeat(stars) + '☆'.repeat(3 - stars) + '</span> 🧩✨';
+        document.body.appendChild(div);
+        setTimeout(() => div.remove(), 1600);
+        const sp = document.createElement('div');
+        sp.className = 'stars-pop';
+        sp.textContent = '★'.repeat(stars);
+        document.body.appendChild(sp);
+        setTimeout(() => sp.remove(), 1200);
+        puzzleCanvas.style.filter = 'drop-shadow(0 0 10px gold)';
+        setTimeout(() => puzzleCanvas.style.filter = '', 700);
+    }
+    function launchConfetti() {
+        const cv = document.createElement('canvas');
+        cv.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1100;';
+        cv.width = window.innerWidth; cv.height = window.innerHeight;
+        document.body.appendChild(cv);
+        const c = cv.getContext('2d');
+        const colors = ['#ffd966', '#ff9f43', '#6fcf97', '#4c9aff', '#f5a97f', '#c56cf0', '#ff6b81'];
+        const parts = [];
+        for (let i = 0; i < 100; i++) {
+            parts.push({
+                x: Math.random() * cv.width,
+                y: -20 - Math.random() * cv.height * 0.5,
+                w: 6 + Math.random() * 6, h: 6 + Math.random() * 8,
+                vy: 2 + Math.random() * 4, vx: -1.5 + Math.random() * 3,
+                rot: Math.random() * Math.PI, vr: -0.15 + Math.random() * 0.3,
+                color: colors[i % colors.length]
+            });
+        }
+        const t0 = performance.now();
+        (function step(now) {
+            c.clearRect(0, 0, cv.width, cv.height);
+            let alive = false;
+            for (const p of parts) {
+                p.x += p.vx; p.y += p.vy; p.vy += 0.03; p.rot += p.vr;
+                if (p.y < cv.height) alive = true;
+                c.save(); c.translate(p.x, p.y); c.rotate(p.rot);
+                c.fillStyle = p.color; c.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                c.restore();
+            }
+            if (alive && now - t0 < 4000) requestAnimationFrame(step); else cv.remove();
+        })(t0);
+    }
+
+    // ==================== 交互 ====================
+    function getCellFromEvent(e) {
+        const rect = puzzleCanvas.getBoundingClientRect();
+        const sx = puzzleCanvas.width / rect.width, sy = puzzleCanvas.height / rect.height;
+        const mx = (e.clientX - rect.left) * sx, my = (e.clientY - rect.top) * sy;
+        const tw = puzzleCanvas.width / cols, th = puzzleCanvas.height / rows;
+        const c = Math.floor(mx / tw), r = Math.floor(my / th);
+        if (r < 0 || r >= rows || c < 0 || c >= cols) return null;
+        return r * cols + c;
+    }
+    function onPointerDown(e) {
+        if (!originalImage || gameCompleted) return;
+        const cell = getCellFromEvent(e);
+        if (cell === null) return;
+        if (mode === 'rotate') { rotateTile(cell); return; }
+        if (mode === 'slide') { slideTile(cell); return; }
+        if (selectedTileIndex === null) {
+            selectedTileIndex = cell;
+            dragState = { x: e.clientX, y: e.clientY, cell, started: false };
+            playSound('select');
+            renderPuzzle();
+        } else {
+            dragState = { x: e.clientX, y: e.clientY, cell, started: false };
+        }
+    }
+    function onPointerMove(e) {
+        if (mode !== 'swap' || !dragState || selectedTileIndex === null) return;
+        const dx = e.clientX - dragState.x, dy = e.clientY - dragState.y;
+        if (!dragState.started && Math.hypot(dx, dy) > 10) {
+            dragState.started = true;
+            dragging = true;
+        }
+        if (dragState.started) {
+            const rect = puzzleCanvas.getBoundingClientRect();
+            const W = canvasDisplaySize.w, H = canvasDisplaySize.h;
+            dragGhost = {
+                srcIdx: tileOrder[selectedTileIndex],
+                x: (e.clientX - rect.left) * (W / rect.width),
+                y: (e.clientY - rect.top) * (H / rect.height)
+            };
+            renderPuzzle();
+        }
+    }
+    function onPointerUp(e) {
+        if (mode !== 'swap') return;
+        const cell = getCellFromEvent(e);
+        const wasDrag = dragState ? dragState.started : false;
+        if (selectedTileIndex !== null) {
+            if (wasDrag) {
+                const sel = selectedTileIndex;
+                selectedTileIndex = null; dragging = false;
+                if (cell !== null && cell !== sel) swapTiles(sel, cell);
+                else renderPuzzle();
+            } else {
+                const target = cell;
+                if (target === null || target === selectedTileIndex) { selectedTileIndex = null; renderPuzzle(); }
+                else { const sel = selectedTileIndex; selectedTileIndex = null; swapTiles(sel, target); }
+            }
+        }
+        dragState = null; dragGhost = null; dragging = false;
+    }
+
+    // ==================== 图片源 ====================
+    const demoDefs = { sunset: drawSunset, geo: drawGeo, forest: drawForest, waves: drawWaves };
+    const demoCache = {};
+    function getDemoImage(name) {
+        if (demoCache[name]) return Promise.resolve(demoCache[name]);
+        return new Promise(res => {
+            const c = document.createElement('canvas');
+            c.width = 900; c.height = 700;
+            demoDefs[name](c.getContext('2d'), 900, 700);
+            const img = new Image();
+            img.onload = () => { demoCache[name] = img; res(img); };
+            img.src = c.toDataURL('image/png');
+        });
+    }
+    function setImage(img) {
+        originalImage = img;
+        previewImg.src = img.src;
+        generateGame();
+    }
+    function handleImageUpload(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            const img = new Image();
+            img.onload = () => { setImage(img); playSound('reset'); };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+    function loadNetImage() {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.onload = () => { setImage(img); };
+        img.onerror = () => { toast('网络图片加载失败', '⚠️'); gallerySelect.value = 'sunset'; };
+        img.src = 'https://placehold.co/1000x700/5e4a38/f7d66a?text=Upload+Your+Puzzle+Image';
+    }
+
+    // 演示图画法
+    function drawSunset(ctx, w, h) {
+        const sky = ctx.createLinearGradient(0, 0, 0, h * 0.6);
+        sky.addColorStop(0, '#3a1d5c'); sky.addColorStop(0.55, '#ff7e5f'); sky.addColorStop(1, '#ffd66a');
+        ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h * 0.6);
+        const glow = ctx.createRadialGradient(w * 0.5, h * 0.34, 10, w * 0.5, h * 0.34, 130);
+        glow.addColorStop(0, '#fff7cf'); glow.addColorStop(0.6, '#ffdf8a'); glow.addColorStop(1, 'rgba(255,223,138,0)');
+        ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(w * 0.5, h * 0.34, 130, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ffec9e'; ctx.beginPath(); ctx.arc(w * 0.5, h * 0.34, 46, 0, Math.PI * 2); ctx.fill();
+        const sea = ctx.createLinearGradient(0, h * 0.58, 0, h);
+        sea.addColorStop(0, '#ffb35c'); sea.addColorStop(0.3, '#7a4a7a'); sea.addColorStop(1, '#1c2f52');
+        ctx.fillStyle = sea; ctx.fillRect(0, h * 0.58, w, h * 0.42);
+        for (let i = 0; i < 8; i++) {
+            const y = h * 0.62 + i * 22, cw = 10 + (i % 3) * 18;
+            ctx.save(); ctx.globalAlpha = Math.max(0.08, 0.5 - i * 0.05);
+            ctx.fillStyle = '#ffd9a0'; ctx.fillRect(w * 0.5 - cw, y, cw * 2, 3); ctx.restore();
+        }
+        ctx.strokeStyle = '#2a1a35'; ctx.lineWidth = 2.5;
+        for (let i = 0; i < 3; i++) {
+            const bx = w * (0.2 + 0.25 * i), by = h * 0.2 + i * 20;
+            ctx.beginPath(); ctx.arc(bx, by, 9, Math.PI * 0.15, Math.PI * 0.85); ctx.stroke();
+        }
+    }
+    function drawGeo(ctx, w, h) {
+        ctx.fillStyle = '#141828'; ctx.fillRect(0, 0, w, h);
+        ctx.save();
+        ctx.translate(w / 2, h / 2); ctx.rotate(Math.PI / 4);
+        const stripeW = 70, L = Math.max(w, h) * 1.6;
+        for (let i = -12; i < 12; i++) {
+            ctx.fillStyle = i % 2 ? '#ffd166' : '#4b3f6b';
+            ctx.fillRect(i * stripeW, -L / 2, stripeW * 0.5, L);
+        }
+        ctx.restore();
+        const cx = w * 0.5, cy = h * 0.42, R = Math.min(w, h) * 0.4;
+        const cols = ['#ef476f', '#ffd166', '#06d6a0', '#118ab2'];
+        for (let i = 0; i < 5; i++) {
+            ctx.fillStyle = cols[i % 4]; ctx.globalAlpha = 0.85;
+            ctx.beginPath(); ctx.arc(cx, cy, R * (5 - i) / 5, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+    }
+    function drawForest(ctx, w, h) {
+        const sky = ctx.createLinearGradient(0, 0, 0, h * 0.55);
+        sky.addColorStop(0, '#b8e6f7'); sky.addColorStop(1, '#f6fbff');
+        ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h * 0.55);
+        ctx.fillStyle = '#ffd76e'; ctx.beginPath(); ctx.arc(w * 0.8, h * 0.16, 34, 0, Math.PI * 2); ctx.fill();
+        const layers = [['#8fd07a', 0.5, 1], ['#58a05e', 0.6, 0.9], ['#2f7d47', 0.72, 0.8]];
+        for (const [col, baseYr, sc] of layers) {
+            ctx.fillStyle = col;
+            ctx.beginPath(); ctx.moveTo(0, h * baseYr + 10);
+            for (let x = 0; x <= w; x += 58) {
+                ctx.lineTo(x, h * baseYr + 10 - sc * 120);
+                ctx.lineTo(x + 29, h * baseYr + 10);
+                ctx.moveTo(x + 29, h * baseYr + 10);
+            }
+            ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath(); ctx.fill();
+        }
+    }
+    function drawWaves(ctx, w, h) {
+        const bg = ctx.createLinearGradient(0, 0, 0, h);
+        bg.addColorStop(0, '#0b2545'); bg.addColorStop(1, '#06203b');
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+        const cols = ['#f72585', '#7209b7', '#4361ee', '#4cc9f0', '#ffd166', '#06d6a0'];
+        for (let i = 0; i < 6; i++) {
+            ctx.strokeStyle = cols[i % cols.length]; ctx.lineWidth = 12; ctx.globalAlpha = 0.75;
+            ctx.beginPath();
+            const baseY = h * 0.18 + i * h * 0.11, amp = 14 + i * 4, ph = i * 1.3;
+            for (let x = 0; x <= w; x += 6) {
+                const y = baseY + Math.sin(x * 0.02 + ph) * amp;
+                if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+    }
+
+    // ==================== 事件绑定 ====================
+    function setMode(m) {
+        mode = m;
+        for (const b of modeSeg.querySelectorAll('button')) b.classList.toggle('active', b.dataset.mode === m);
+        if (m === 'rotate') {
+            rowInput.value = clampInt(rowInput.value, 2, 8);
+            colInput.value = rowInput.value;
+        }
+        if (originalImage) generateGame();
+        else updateHowTo();
+    }
+
+    function bindEvents() {
+        fileInput.addEventListener('change', e => { if (e.target.files && e.target.files[0]) handleImageUpload(e.target.files[0]); });
+        gallerySelect.addEventListener('change', () => {
+            const v = gallerySelect.value;
+            if (v === 'net') loadNetImage();
+            else getDemoImage(v).then(setImage);
+        });
+        modeSeg.addEventListener('click', e => {
+            const b = e.target.closest('button[data-mode]');
+            if (b) setMode(b.dataset.mode);
+        });
+        presetSelect.addEventListener('change', () => {
+            const p = presetSelect.value;
+            if (p === 'custom') return;
+            const map = { easy: [3, 3], medium: [4, 4], hard: [5, 5], master: [6, 6] };
+            rowInput.value = map[p][0]; colInput.value = map[p][1];
+            if (originalImage) generateGame();
+        });
+        rowInput.addEventListener('change', () => {
+            rowInput.value = clampInt(rowInput.value, 2, 8);
+            if (originalImage) generateGame();
+        });
+        colInput.addEventListener('change', () => {
+            colInput.value = clampInt(colInput.value, 2, 8);
+            if (mode === 'rotate') colInput.value = rowInput.value;
+            if (originalImage) generateGame();
+        });
+        generateBtn.addEventListener('click', () => { if (originalImage) { generateGame(); toast('新一局，开始挑战！', '🎲'); } });
+        undoBtn.addEventListener('click', undo);
+        hintBtn.addEventListener('click', showHint);
+        resetBtn.addEventListener('click', oneKeyReset);
+        saveBtn.addEventListener('click', () => {
+            if (!originalImage) { toast('无拼图内容', '📤'); return; }
+            const a = document.createElement('a');
+            a.download = 'puzzle_snapshot.png';
+            a.href = puzzleCanvas.toDataURL('image/png');
+            a.click();
+            playSound('swap');
+        });
+        saveOriginalBtn.addEventListener('click', () => {
+            if (!originalImage) { toast('没有原始图片', '📤'); return; }
+            const c = document.createElement('canvas');
+            c.width = originalImage.width; c.height = originalImage.height;
+            c.getContext('2d').drawImage(originalImage, 0, 0);
+            const a = document.createElement('a');
+            a.download = 'original_puzzle_image.png';
+            a.href = c.toDataURL('image/png');
+            a.click();
+            playSound('hint');
+        });
+        togglePreviewBtn.addEventListener('click', () => {
             previewContainer.classList.toggle('hidden-preview');
-        }
-        
-        // 监听分割数量手动变更
-        function onGridNumberChange() {
-            let val = parseInt(gridNumInput.value);
-            if (isNaN(val)) val = 3;
-            val = Math.min(6, Math.max(2, val));
-            gridNumInput.value = val;
-            if (originalImage) {
-                rebuildPuzzle(false);
-            }
-        }
-        
-        // 窗口大小改变时重新适配 (重要)
-        let resizeTimer;
-        function onWindowResize() {
-            if (resizeTimer) clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(() => {
-                if (originalImage) {
-                    rebuildPuzzle(true);  // 保持顺序，只改变尺寸
-                }
+            togglePreviewBtn.textContent = previewContainer.classList.contains('hidden-preview') ? '🖼 显示原图' : '🙈 隐藏原图';
+        });
+        soundCheckbox.addEventListener('change', e => {
+            soundEnabled = e.target.checked;
+            if (soundEnabled && audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        });
+        puzzleCanvas.addEventListener('pointerdown', onPointerDown);
+        puzzleCanvas.addEventListener('pointermove', onPointerMove);
+        puzzleCanvas.addEventListener('pointerup', onPointerUp);
+        puzzleCanvas.addEventListener('pointercancel', () => { dragState = null; dragGhost = null; dragging = false; });
+        window.addEventListener('resize', () => {
+            clearTimeout(window._resizeTimer);
+            window._resizeTimer = setTimeout(() => {
+                if (originalImage) { computeCanvasSize(); buildTileImages(); renderPuzzle(); }
             }, 150);
-        }
-        
-        function bindEvents() {
-            fileInput.addEventListener('change', (e) => { if(e.target.files && e.target.files[0]) handleImageUpload(e.target.files[0]); });
-            generateBtn.addEventListener('click', reshufflePuzzle);
-            hintBtn.addEventListener('click', showHint);
-            resetBtn.addEventListener('click', oneKeyReset);
-            saveBtn.addEventListener('click', saveSnapshot);
-            saveOriginalBtn.addEventListener('click', saveOriginalPicture);
-            togglePreviewBtn.addEventListener('click', togglePreview);
-            puzzleCanvas.addEventListener('click', onCanvasClick);
-            soundCheckbox.addEventListener('change', (e) => { soundEnabled = e.target.checked; if(soundEnabled && audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); });
-            gridNumInput.addEventListener('change', onGridNumberChange);
-            window.addEventListener('resize', onWindowResize);
-            document.body.addEventListener('click', () => {
-                if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-            }, { once: true });
-        }
-        
-        // 默认演示图片 (优雅提示)
-        function setDefaultImage() {
-            const defaultImg = new Image();
-            defaultImg.crossOrigin = "Anonymous";
-            defaultImg.src = "https://placehold.co/1000x700/5e4a38/f7d66a?text=Upload+Your+Puzzle+Image";
-            defaultImg.onload = () => {
-                originalImage = defaultImg;
-                previewImg.src = defaultImg.src;
-                rebuildPuzzle(true);
-            };
-            defaultImg.onerror = () => {
-                // 如果网络图片加载失败，创建一个渐变色canvas
-                const canvas = document.createElement('canvas');
-                canvas.width = 800;
-                canvas.height = 600;
-                const dCtx = canvas.getContext('2d');
-                const grad = dCtx.createLinearGradient(0,0,canvas.width,canvas.height);
-                grad.addColorStop(0, '#6c5a47');
-                grad.addColorStop(1, '#8b765c');
-                dCtx.fillStyle = grad;
-                dCtx.fillRect(0,0,canvas.width,canvas.height);
-                dCtx.fillStyle = "#ffd966";
-                dCtx.font = "bold 32px 'Segoe UI'";
-                dCtx.textAlign = "center";
-                dCtx.fillText("⬆️ 上传图片开始", canvas.width/2, canvas.height/2);
-                canvas.toBlob(blob => {
-                    const img = new Image();
-                    img.onload = () => { originalImage = img; previewImg.src = img.src; rebuildPuzzle(true); };
-                    img.src = URL.createObjectURL(blob);
-                });
-            };
-        }
-        setDefaultImage();
-        bindEvents();
-    })();
+        });
+        document.addEventListener('keydown', e => {
+            const tag = (e.target.tagName || '').toLowerCase();
+            if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
+            else if (e.key.toLowerCase() === 'r') { generateGame(); }
+            else if (e.key.toLowerCase() === 'h') { showHint(); }
+        });
+        document.body.addEventListener('click', () => {
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        }, { once: true });
+    }
+
+    // ==================== 初始化 ====================
+    updateAchievementsPanel();
+    getDemoImage('sunset').then(img => {
+        originalImage = img;
+        previewImg.src = img.src;
+        buildPuzzle();
+        startTimer();
+    });
+    bindEvents();
+})();
 </script>
 <script>
   if ('serviceWorker' in navigator) {
